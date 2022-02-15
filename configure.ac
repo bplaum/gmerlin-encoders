@@ -150,7 +150,6 @@ fi
 
 AC_CONFIG_FILES([Makefile \
 po/Makefile.in \
-gmerlin_encoders.spec \
 include/Makefile \
 lib/Makefile \
 m4/Makefile \

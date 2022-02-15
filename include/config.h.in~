@@ -3,12 +3,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Header for libavcodec */
-#undef AVCODEC_HEADER
-
-/* libavformat header */
-#undef AVFORMAT_HEADER
-
 /* Flac major version */
 #undef BGAV_FLAC_MAJOR
 
@@ -21,6 +15,12 @@
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
+
+/* Do we have libavcodec installed? */
+#undef HAVE_AVCODEC
+
+/* Do we have libavformat installed? */
+#undef HAVE_AVFORMAT
 
 /* Define to 1 if you have the Mac OS X function CFLocaleCopyCurrent in the
    CoreFoundation framework. */
@@ -54,15 +54,6 @@
 
 /* Enable lame */
 #undef HAVE_LAME
-
-/* Do we have libavcodec installed? */
-#undef HAVE_LIBAVCODEC
-
-/* Define to 1 if you have the <libavcore/avcore.h> header file. */
-#undef HAVE_LIBAVCORE_AVCORE_H
-
-/* Do we have libavformat installed? */
-#undef HAVE_LIBAVFORMAT
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -147,9 +138,6 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
-
-/* Header for vaapi */
-#undef VAAPI_HEADER
 
 /* Version number of package */
 #undef VERSION
