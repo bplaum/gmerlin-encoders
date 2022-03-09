@@ -164,6 +164,7 @@ static void * create_b_ogg()
                                 NULL,
                                 close_callback,
                                 NULL,
+                                GAVF_IO_CAN_WRITE,
                                 ret->open_callback_data);
   return ret;
   }

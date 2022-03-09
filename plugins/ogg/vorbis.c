@@ -355,15 +355,15 @@ static gavl_audio_sink_t * init_vorbis(void * data,
   /* And stream them out */
 
   gavl_append_xiph_header(&ci_ret->global_header,
-                          (int*)&ci_ret->global_header_len,
+                          &ci_ret->global_header_len,
                           header_main.packet, header_main.bytes);
 
   gavl_append_xiph_header(&ci_ret->global_header,
-                          (int*)&ci_ret->global_header_len,
+                          &ci_ret->global_header_len,
                           header_comments.packet, header_comments.bytes);
 
   gavl_append_xiph_header(&ci_ret->global_header,
-                          (int*)&ci_ret->global_header_len,
+                          &ci_ret->global_header_len,
                           header_codebooks.packet, header_codebooks.bytes);
   
   ci_ret->id = GAVL_CODEC_ID_VORBIS;

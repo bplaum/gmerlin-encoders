@@ -558,7 +558,7 @@ init_theora(void * data, gavl_compression_info_t * ci,
   while(th_encode_flushheader(theora->ts, &theora->tc, &op) > 0)
     {
     gavl_append_xiph_header(&ci->global_header,
-                            (int*)&ci->global_header_len,
+                            &ci->global_header_len,
                             op.packet, op.bytes);
     
     if(header_packets == 1)
