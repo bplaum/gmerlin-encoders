@@ -778,7 +778,7 @@ static gavl_video_frame_t * get_frame(void * data)
     s->gavl_frame->planes[i]    = frame->components[i].data;
     s->gavl_frame->strides[i] = frame->components[i].stride;
     }
-  s->gavl_frame->user_data = frame;
+  s->gavl_frame->client_data = frame;
   return s->gavl_frame;
   }
 
@@ -793,8 +793,8 @@ static gavl_sink_status_t put_frame(void * data, gavl_video_frame_t * f)
     return GAVL_SINK_ERROR;
     }
 
-  schro_encoder_push_frame(s->enc, f->user_data);
-  f->user_data = NULL;
+  schro_encoder_push_frame(s->enc, f->client_data);
+  f->client_data = NULL;
   return flush_data(s);
   }
 
