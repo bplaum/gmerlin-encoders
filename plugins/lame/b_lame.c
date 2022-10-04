@@ -133,7 +133,7 @@ static void set_audio_parameter_lame(void * data, int stream, const char * name,
 static gavl_sink_status_t write_callback(void * data, gavl_packet_t * p)
   {
   b_lame_t * lame = data;
-  return (bg_shout_write(lame->shout, p->data, p->data_len) == p->data_len) ?
+  return (bg_shout_write(lame->shout, p->buf.buf, p->buf.len) == p->buf.len) ?
     GAVL_SINK_OK : GAVL_SINK_ERROR;
   }
 

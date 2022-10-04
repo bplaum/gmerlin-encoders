@@ -207,8 +207,8 @@ int bg_ogg_stream_flush(bg_ogg_stream_t * s, int force)
 
 void bg_ogg_packet_to_gavl(ogg_packet * src, gavl_packet_t * dst, int64_t * pts)
   {
-  dst->data = src->packet;
-  dst->data_len = src->bytes;
+  dst->buf.buf = src->packet;
+  dst->buf.len = src->bytes;
 
   if(pts)
     {
@@ -226,8 +226,8 @@ void bg_ogg_packet_to_gavl(ogg_packet * src, gavl_packet_t * dst, int64_t * pts)
 void bg_ogg_packet_from_gavl(bg_ogg_stream_t * s, gavl_packet_t * src,
                              ogg_packet * dst)
   {
-  dst->packet = src->data;
-  dst->bytes = src->data_len;
+  dst->packet = src->buf.buf;
+  dst->bytes = src->buf.len;
   dst->granulepos = src->pts + src->duration;
   if(src->flags & GAVL_PACKET_LAST)
     dst->e_o_s = 1;
@@ -243,7 +243,7 @@ static gavl_sink_status_t write_gavl_packet(void * data, gavl_packet_t * p)
   bg_ogg_stream_t * s = data;
 
   /* Flush the last packet */
-  if(s->last_packet.data_len)
+  if(s->last_packet.buf.len)
     {
     ogg_packet op;
     memset(&op, 0, sizeof(op));
@@ -262,7 +262,7 @@ static gavl_sink_status_t write_gavl_packet(void * data, gavl_packet_t * p)
 static int flush_stream(bg_ogg_stream_t * s)
   {
   /* Flush the last packet */
-  if(s->last_packet.data_len)
+  if(s->last_packet.buf.len)
     {
     ogg_packet op;
     memset(&op, 0, sizeof(op));

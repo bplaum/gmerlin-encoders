@@ -343,8 +343,8 @@ static int flush_frame(opus_t * opus, int eof)
     
     /* Create packet */
     gavl_packet_init(&gp);
-    gp.data = opus->enc_buffer;
-    gp.data_len = result;
+    gp.buf.buf = opus->enc_buffer;
+    gp.buf.len = result;
     if(eof)
       gp.flags |= GAVL_PACKET_LAST;
 

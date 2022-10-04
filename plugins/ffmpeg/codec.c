@@ -204,8 +204,8 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
   av_init_packet(&pkt);
   gavl_packet_reset(&ctx->gp);
   
-  pkt.data = ctx->gp.data;
-  pkt.size = ctx->gp.data_alloc;
+  pkt.data = ctx->gp.buf.buf;
+  pkt.size = ctx->gp.buf.alloc;
   
   if(ctx->aframe->valid_samples)
     {
@@ -270,8 +270,8 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     
     ctx->gp.flags |= GAVL_PACKET_KEYFRAME;
     
-    ctx->gp.data_len = pkt.size;
-    ctx->gp.data     = pkt.data;
+    ctx->gp.buf.len = pkt.size;
+    ctx->gp.buf.buf = pkt.data;
     
     // fprintf(stderr, "Put audio packet\n");
     // gavl_packet_dump(&ctx->gp);
@@ -519,15 +519,15 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
     if(pkt.flags & AV_PKT_FLAG_KEY)
       ctx->gp.flags |= GAVL_PACKET_KEYFRAME;
     
-    ctx->gp.data_len = pkt.size;
-    ctx->gp.data = pkt.data;
+    ctx->gp.buf.len = pkt.size;
+    ctx->gp.buf.buf = pkt.data;
     
     if(ctx->vfmt.framerate_mode == GAVL_FRAMERATE_CONSTANT)
       ctx->gp.pts *= ctx->vfmt.frame_duration;
     
     /* Detect VP8 alternate reference frames */
     if((ctx->id == AV_CODEC_ID_VP8) &&
-       !(ctx->gp.data[0] & 0x10))
+       !(ctx->gp.buf.buf[0] & 0x10))
       ctx->gp.flags |= GAVL_PACKET_NOOUTPUT; 
     else
       {
@@ -568,7 +568,7 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
     if((ctx->pass == 1) && ctx->avctx->stats_out && ctx->stats_file)
       fprintf(ctx->stats_file, "%s", ctx->avctx->stats_out);
 
-    ctx->gp.data = NULL;
+    ctx->gp.buf.buf = NULL;
     
     av_packet_unref(&pkt);
     }

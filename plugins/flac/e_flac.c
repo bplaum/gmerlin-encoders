@@ -453,7 +453,7 @@ write_audio_packet_func_flac(void * priv, gavl_packet_t * packet)
   
   append_packet(flac, packet->duration);
   
-  if(write_data(flac, packet->data, packet->data_len))
+  if(write_data(flac, packet->buf.buf, packet->buf.len))
     return GAVL_SINK_OK;
   else
     return GAVL_SINK_ERROR;

@@ -248,9 +248,9 @@ static int flush_packet(speex_t * speex)
   //  fprintf(stderr, "Flush packet\n");
   
   /* Flush packet */
-  p.data_len  = speex_bits_write(&speex->bits, (char*)speex->buffer,
+  p.buf.len  = speex_bits_write(&speex->bits, (char*)speex->buffer,
                                  BUFFER_SIZE);
-  p.data = speex->buffer;
+  p.buf.buf = speex->buffer;
 
   p.pts = speex->pts;
   p.duration = speex->duration;

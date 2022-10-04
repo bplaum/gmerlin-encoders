@@ -263,8 +263,8 @@ write_callback(const FLAC__StreamEncoder *encoder,
     {
     gavl_packet_t gp;
     gavl_packet_init(&gp);
-    gp.data_len = bytes;
-    gp.data = (uint8_t*)buffer;
+    gp.buf.len = bytes;
+    gp.buf.buf = (uint8_t*)buffer;
     gp.duration = samples;
     gp.pts = flac->pts;
     flac->pts += samples;
@@ -292,16 +292,16 @@ write_audio_packet_func_flac(void * priv, gavl_packet_t * packet)
   
   // fprintf(stderr, "%ld %ld\n", packet->duration, flac->samples_written);
   
-  if(packet->data_len < 6)
+  if(packet->buf.len < 6)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Packet data too small: %d",
-           packet->data_len);
+           packet->buf.len);
     return GAVL_SINK_ERROR;
     }
   
   if(!flac->si.total_samples)
     {
-    flac->fixed_blocksize = !(packet->data[1] & 0x01); // bit 15
+    flac->fixed_blocksize = !(packet->buf.buf[1] & 0x01); // bit 15
     flac->si.min_blocksize = packet->duration;
     flac->si.max_blocksize = packet->duration;
     }
@@ -313,10 +313,10 @@ write_audio_packet_func_flac(void * priv, gavl_packet_t * packet)
       flac->si.max_blocksize = packet->duration;
     }
   
-  if(!flac->si.min_framesize || (packet->data_len < flac->si.min_framesize))
-    flac->si.min_framesize = packet->data_len;
-  if(packet->data_len > flac->si.max_framesize)
-    flac->si.max_framesize = packet->data_len;
+  if(!flac->si.min_framesize || (packet->buf.len < flac->si.min_framesize))
+    flac->si.min_framesize = packet->buf.len;
+  if(packet->buf.len > flac->si.max_framesize)
+    flac->si.max_framesize = packet->buf.len;
   
   flac->si.total_samples += packet->duration;
   

@@ -505,8 +505,8 @@ static int flush_packets(bg_lame_t * lame, int flush_all)
       {
       /* Output packet */
       gavl_packet_alloc(&lame->gp, h.frame_bytes);
-      memcpy(lame->gp.data, lame->buffer, h.frame_bytes);
-      lame->gp.data_len = h.frame_bytes;
+      memcpy(lame->gp.buf.buf, lame->buffer, h.frame_bytes);
+      lame->gp.buf.len = h.frame_bytes;
 
       /* PTS */
 

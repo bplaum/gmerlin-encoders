@@ -256,7 +256,7 @@ write_audio_packet_func_lame(void * data, gavl_packet_t * p)
   if((lame->ci.bitrate == GAVL_BITRATE_VBR) &&
      !lame->xing)
     {
-    lame->xing = bg_xing_create(p->data, p->data_len);
+    lame->xing = bg_xing_create(p->buf.buf, p->buf.len);
     lame->xing_pos = gavf_io_position(lame->output);
     
     if(!bg_xing_write(lame->xing, lame->output))
@@ -264,9 +264,9 @@ write_audio_packet_func_lame(void * data, gavl_packet_t * p)
     }
 
   if(lame->xing)
-    bg_xing_update(lame->xing, p->data_len);
+    bg_xing_update(lame->xing, p->buf.len);
   
-  if(gavf_io_write_data(lame->output, p->data, p->data_len) < p->data_len)
+  if(gavf_io_write_data(lame->output, p->buf.buf, p->buf.len) < p->buf.len)
     return GAVL_SINK_ERROR;
   return GAVL_SINK_OK;
   }

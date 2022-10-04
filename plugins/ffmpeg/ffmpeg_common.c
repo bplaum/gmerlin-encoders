@@ -429,8 +429,8 @@ write_text_packet_func(void * data, gavl_packet_t * p)
   
   av_init_packet(&pkt);
   
-  pkt.data     = p->data;
-  pkt.size     = p->data_len + 1; // Let's hope the packet got padded!!!
+  pkt.data     = p->buf.buf;
+  pkt.size     = p->buf.len + 1; // Let's hope the packet got padded!!!
 
 #if 1
   pkt.pts= av_rescale_q(p->pts,
@@ -599,8 +599,8 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
     return 1; // Drop undecodable packet
   
   av_init_packet(&pkt);
-  pkt.data = packet->data;
-  pkt.size = packet->data_len;
+  pkt.data = packet->buf.buf;
+  pkt.size = packet->buf.len;
 
   pkt.pts      = rescale_video_timestamp(st, packet->pts);
   pkt.duration = rescale_video_timestamp(st, packet->duration);
@@ -652,8 +652,8 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   
   av_init_packet(&pkt);
 
-  pkt.data = packet->data;
-  pkt.size = packet->data_len;
+  pkt.data = packet->buf.buf;
+  pkt.size = packet->buf.len;
 
   time_base.num = 1;
   time_base.den = st->format.samplerate;
