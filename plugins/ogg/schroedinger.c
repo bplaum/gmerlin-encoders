@@ -685,18 +685,18 @@ static gavl_sink_status_t flush_data(schro_t * s)
           gavl_packet_t * out_pkt;
           gavl_packet_t pkt;
           
-          if(s->pkt.data_len) // Have data already
+          if(s->pkt.buf.len) // Have data already
             {
-            gavl_packet_alloc(&s->pkt, s->pkt.data_len + buf->length);
-            memcpy(s->pkt.data + s->pkt.data_len, buf->data, buf->length);
-            s->pkt.data_len += buf->length;
+            gavl_packet_alloc(&s->pkt, s->pkt.buf.len + buf->length);
+            memcpy(s->pkt.buf.buf + s->pkt.buf.len, buf->data, buf->length);
+            s->pkt.buf.len += buf->length;
             out_pkt = &s->pkt;
             }
           else
             {
             gavl_packet_init(&pkt);
-            pkt.data_len = buf->length;
-            pkt.data = buf->data;
+            pkt.buf.len = buf->length;
+            pkt.buf.buf = buf->data;
             out_pkt = &pkt;
             }
           
@@ -737,11 +737,11 @@ static gavl_sink_status_t flush_data(schro_t * s)
           }
         else
           {
-          gavl_packet_alloc(&s->pkt, s->pkt.data_len + buf->length);
-          memcpy(s->pkt.data + s->pkt.data_len, buf->data, buf->length);
-          s->pkt.data_len += buf->length;
+          gavl_packet_alloc(&s->pkt, s->pkt.buf.len + buf->length);
+          memcpy(s->pkt.buf.buf + s->pkt.buf.len, buf->data, buf->length);
+          s->pkt.buf.len += buf->length;
           if(SCHRO_PARSE_CODE_IS_SEQ_HEADER(parse_code))
-            s->pkt.header_size = s->pkt.data_len;
+            s->pkt.header_size = s->pkt.buf.len;
           }
         schro_buffer_unref(buf);
         }

@@ -218,7 +218,7 @@ static int open_faac(void * data, const char * filename,
 static gavl_sink_status_t write_packet(void * data, gavl_packet_t * p)
   {
   faac_t * faac = data;
-  if(gavf_io_write_data(faac->output, p->data, p->data_len) < p->data_len)
+  if(gavf_io_write_data(faac->output, p->buf.buf, p->buf.len) < p->buf.len)
     return GAVL_SINK_ERROR;
   return GAVL_SINK_OK;
   }

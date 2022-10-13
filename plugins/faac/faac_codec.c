@@ -259,9 +259,9 @@ static int flush_audio(bg_faac_t * ctx)
   bytes_encoded = faacEncEncode(ctx->enc,
                                 (int32_t*)ctx->frame->samples.f,
                                 num_samples,
-                                ctx->p.data, ctx->p.data_alloc);
+                                ctx->p.buf.buf, ctx->p.buf.alloc);
 
-  ctx->p.data_len = bytes_encoded;
+  ctx->p.buf.len = bytes_encoded;
 
   /* Mute sets valid samples to samples_per_frame!! */
   gavl_audio_frame_mute(ctx->frame, &ctx->fmt);
