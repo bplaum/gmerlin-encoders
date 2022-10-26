@@ -226,8 +226,8 @@ static int init_compressed_speex(bg_ogg_stream_t * s)
   {
   ogg_packet op;
   memset(&op, 0, sizeof(op));
-  op.packet = (unsigned char *)s->ci.global_header;
-  op.bytes = s->ci.global_header_len;
+  op.packet = (unsigned char *)s->ci.codec_header.buf;
+  op.bytes = s->ci.codec_header.len;
   if(!bg_ogg_stream_write_header_packet(s, &op))
     return 0;
   
@@ -380,7 +380,7 @@ static gavl_audio_sink_t * init_speex(void * data,
   float quality_f;
   const SpeexMode *mode=NULL;
   int header_len;
-
+  uint8_t * header;
   char * vendor_string;
   char * version;
   
@@ -470,12 +470,15 @@ static gavl_audio_sink_t * init_speex(void * data,
   
   /* Build header */
 
-  ci->global_header = (unsigned char *)speex_header_to_packet(&speex->header,
-                                                              &header_len);
-  ci->global_header_len = header_len;
+  header = (unsigned char *)speex_header_to_packet(&speex->header,
+                                                   &header_len);
+  
+  gavl_buffer_append_data(&ci->codec_header, header, header_len);
+  free(header);
+  
   ci->id = GAVL_CODEC_ID_SPEEX;
   
-  bg_hexdump(ci->global_header, ci->global_header_len, 16); 
+  bg_hexdump(ci->codec_header.buf, ci->codec_header.len, 16); 
   
   /* Extract vendor string */
   

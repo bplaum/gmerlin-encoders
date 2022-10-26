@@ -83,15 +83,16 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
   memset(&op, 0, sizeof(op));
   
   /* Not the last metadata packet */
-  s->ci.global_header[4] &= 0x7f;
+  s->ci.codec_header.buf[4] &= 0x7f;
 
-  op.packet = malloc(9 + s->ci.global_header_len);
+  op.packet = malloc(9 + s->ci.codec_header.len);
   
   memcpy(op.packet, header_bytes, 9);
-  memcpy(op.packet+9, s->ci.global_header,
-         s->ci.global_header_len);
+  
+  memcpy(op.packet+9, s->ci.codec_header.buf,
+         s->ci.codec_header.len);
 
-  op.bytes  = s->ci.global_header_len + 9;
+  op.bytes  = s->ci.codec_header.len + 9;
   
   if(!bg_ogg_stream_write_header_packet(s, &op))
     {

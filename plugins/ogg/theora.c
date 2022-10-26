@@ -287,8 +287,7 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
 
   /* Write ID packet */
 
-  packet.packet = gavl_extract_xiph_header(s->ci.global_header,
-                                           s->ci.global_header_len,
+  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
                                            0, &len);
 
   if(!packet.packet)
@@ -320,8 +319,7 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
   
   /* Codepages */
 
-  packet.packet = gavl_extract_xiph_header(s->ci.global_header,
-                                           s->ci.global_header_len,
+  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
                                            2, &len);
   
   if(!packet.packet)
@@ -557,8 +555,7 @@ init_theora(void * data, gavl_compression_info_t * ci,
   /* Build global header */
   while(th_encode_flushheader(theora->ts, &theora->tc, &op) > 0)
     {
-    gavl_append_xiph_header(&ci->global_header,
-                            &ci->global_header_len,
+    gavl_append_xiph_header(&ci->codec_header,
                             op.packet, op.bytes);
     
     if(header_packets == 1)

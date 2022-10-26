@@ -1021,14 +1021,14 @@ static void copy_extradata(AVCodecParameters * avctx,
   {
   //  fprintf(stderr, "Copying extradata %d bytes\n", ci->global_header_len);
   
-  if(ci->global_header_len)
+  if(ci->codec_header.len)
     {
-    avctx->extradata_size = ci->global_header_len;
+    avctx->extradata_size = ci->codec_header.len;
     avctx->extradata =
       av_malloc(avctx->extradata_size + AV_INPUT_BUFFER_PADDING_SIZE);
     memcpy(avctx->extradata,
-           ci->global_header,
-           ci->global_header_len);
+           ci->codec_header.buf,
+           ci->codec_header.len);
     memset(avctx->extradata + avctx->extradata_size, 0, AV_INPUT_BUFFER_PADDING_SIZE);
     //    avctx->flags |= CODEC_FLAG_GLOBAL_HEADER;
     }

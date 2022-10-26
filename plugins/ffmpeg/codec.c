@@ -178,11 +178,7 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
     /* Extract extradata */
 
     if(ctx->avctx->extradata_size)
-      {
-      ci->global_header_len = ctx->avctx->extradata_size;
-      ci->global_header = malloc(ci->global_header_len);
-      memcpy(ci->global_header, ctx->avctx->extradata, ci->global_header_len);
-      }
+      gavl_buffer_append_data(&ci->codec_header, ctx->avctx->extradata, ctx->avctx->extradata_size);
     }
   if(m)
     gavl_dictionary_set_string(m, GAVL_META_SOFTWARE, LIBAVCODEC_IDENT);

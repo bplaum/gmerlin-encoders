@@ -63,7 +63,7 @@ typedef struct
 #define MAX_HEADER_LEN (8+1+1+2+4+2+1+1+1+256)
 
 static void setup_header(opus_header_t * h, gavl_audio_format_t * format);
-static int header_to_packet(opus_header_t * h, uint8_t * ret);
+static void header_to_packet(opus_header_t * h, gavl_buffer_t * ret);
 
 typedef struct
   {
@@ -519,8 +519,7 @@ init_opus(void * data, gavl_compression_info_t * ci,
   
   /* Output header */
 
-  ci->global_header = malloc(MAX_HEADER_LEN);
-  ci->global_header_len = header_to_packet(&opus->h, ci->global_header);
+  header_to_packet(&opus->h, &ci->codec_header);
   ci->id = GAVL_CODEC_ID_OPUS;
   ci->pre_skip = opus->h.pre_skip;
 
@@ -548,8 +547,8 @@ static int init_compressed_opus(bg_ogg_stream_t * s)
   
   memset(&op, 0, sizeof(op));
 
-  op.packet = s->ci.global_header;
-  op.bytes = s->ci.global_header_len;
+  op.packet = s->ci.codec_header.buf;
+  op.bytes = s->ci.codec_header.len;
   
   /* And stream them out */
 
@@ -758,9 +757,14 @@ static void setup_header(opus_header_t * h, gavl_audio_format_t * format)
   buf[base]=(val)&0xff;
 
 
-static int header_to_packet(opus_header_t * h, uint8_t * ret)
+static void header_to_packet(opus_header_t * h, gavl_buffer_t * buf)
   {
   int len = 0;
+  uint8_t * ret;
+  
+  gavl_buffer_alloc(buf, MAX_HEADER_LEN);
+  
+  ret = buf->buf;
   
   memcpy(ret, "OpusHead", 8);        len+=8;
   ret[len] = h->version;             len++;
@@ -775,5 +779,6 @@ static int header_to_packet(opus_header_t * h, uint8_t * ret)
     ret[len] = h->chtab.coupled_count; len++;
     memcpy(ret + len, h->chtab.map, h->channel_count); len += h->channel_count;
     }
-  return len;
+  
+  buf->len = len;
   }

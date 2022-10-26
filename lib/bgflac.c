@@ -189,7 +189,7 @@ static void metadata_callback(const FLAC__StreamEncoder *enc,
     /* Re-write stream info */
 
     si = &m->data.stream_info;
-    ptr = flac->ci.global_header + 8; // Signature + metadata header
+    ptr = flac->ci.codec_header.buf + 8; // Signature + metadata header
     
     GAVL_16BE_2_PTR(si->min_blocksize, ptr); ptr += 2;
     GAVL_16BE_2_PTR(si->max_blocksize, ptr); ptr += 2;
@@ -218,8 +218,8 @@ static void metadata_callback(const FLAC__StreamEncoder *enc,
     memcpy(ptr, si->md5sum, 16); ptr += 16;
     
     flac->streaminfo_callback(flac->callback_priv,
-                              flac->ci.global_header,
-                              flac->ci.global_header_len);
+                              flac->ci.codec_header.buf,
+                              flac->ci.codec_header.len);
     }
      
   }
@@ -234,27 +234,26 @@ write_callback(const FLAC__StreamEncoder *encoder,
   {
   bg_flac_t * flac = data;
 
-  if(flac->ci.global_header_len < BG_FLAC_HEADER_SIZE)
+  if(flac->ci.codec_header.len < BG_FLAC_HEADER_SIZE)
     {
     //    fprintf(stderr, "write callback: %d %ld\n", flac->ci.global_header_len,
     //            bytes);
+
+    gavl_buffer_append_data(&flac->ci.codec_header, buffer, bytes);
     
-    memcpy(flac->ci.global_header + flac->ci.global_header_len, buffer, bytes);
-    flac->ci.global_header_len += bytes;
-    
-    if(flac->ci.global_header_len == BG_FLAC_HEADER_SIZE)
+    if(flac->ci.codec_header.len == BG_FLAC_HEADER_SIZE)
       {
       /*
        *  Last metadata packet. By default libflac will emit a vorbis_comment
        *  with just the vendor_string after that.
        */
-      flac->ci.global_header[4] |= 0x80;
+      flac->ci.codec_header.buf[4] |= 0x80;
       
       /* Extract codec header */
       if(flac->streaminfo_callback)
         flac->streaminfo_callback(flac->callback_priv,
-                                  flac->ci.global_header,
-                                  flac->ci.global_header_len);
+                                  flac->ci.codec_header.buf,
+                                  flac->ci.codec_header.len);
       }
     }
   
@@ -336,7 +335,7 @@ bg_flac_start_compressed(bg_flac_t * flac,
   flac->format = fmt;
   gavl_compression_info_copy(&flac->ci, ci);
 
-  ptr = flac->ci.global_header
+  ptr = flac->ci.codec_header.buf
     + 8  // Signature + metadata header
     + 10 // min/max frame/blocksize
     + 2; // upper 16 bit of 20 samplerate bits
@@ -351,12 +350,12 @@ bg_flac_start_compressed(bg_flac_t * flac,
   flac->si.bits_per_sample = ((i_tmp >> 4) & 0x1f)+1;
   flac->si.total_samples = 0;
   
-  memcpy(flac->si.md5sum, flac->ci.global_header + 42 - 16, 16);
+  memcpy(flac->si.md5sum, flac->ci.codec_header.buf + 42 - 16, 16);
 
   if(flac->streaminfo_callback)
     flac->streaminfo_callback(flac->callback_priv,
-                              flac->ci.global_header,
-                              flac->ci.global_header_len);
+                              flac->ci.codec_header.buf,
+                              flac->ci.codec_header.len);
 
 
   return gavl_packet_sink_create(NULL, write_audio_packet_func_flac, flac);;
@@ -533,7 +532,7 @@ bg_flac_t * bg_flac_create()
   bg_flac_t * flac = calloc(1, sizeof(*flac));
   flac->enc = FLAC__stream_encoder_new();
   flac->ci.id = GAVL_CODEC_ID_FLAC;
-  flac->ci.global_header = malloc(BG_FLAC_HEADER_SIZE);
+  gavl_buffer_alloc(&flac->ci.codec_header, BG_FLAC_HEADER_SIZE);
   return flac;
   }
 

@@ -162,8 +162,7 @@ static int init_compressed_vorbis(bg_ogg_stream_t * s)
   
   /* Write ID packet */
 
-  packet.packet = gavl_extract_xiph_header(s->ci.global_header,
-                                           s->ci.global_header_len,
+  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
                                            0, &len);
 
   if(!packet.packet)
@@ -189,8 +188,7 @@ static int init_compressed_vorbis(bg_ogg_stream_t * s)
   
   /* Codepages */
 
-  packet.packet = gavl_extract_xiph_header(s->ci.global_header,
-                                           s->ci.global_header_len,
+  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
                                            2, &len);
   
   if(!packet.packet)
@@ -354,16 +352,13 @@ static gavl_audio_sink_t * init_vorbis(void * data,
   gavl_dictionary_set_string_nocopy(stream_metadata, GAVL_META_SOFTWARE, vendor);
   /* And stream them out */
 
-  gavl_append_xiph_header(&ci_ret->global_header,
-                          &ci_ret->global_header_len,
+  gavl_append_xiph_header(&ci_ret->codec_header,
                           header_main.packet, header_main.bytes);
 
-  gavl_append_xiph_header(&ci_ret->global_header,
-                          &ci_ret->global_header_len,
+  gavl_append_xiph_header(&ci_ret->codec_header,
                           header_comments.packet, header_comments.bytes);
 
-  gavl_append_xiph_header(&ci_ret->global_header,
-                          &ci_ret->global_header_len,
+  gavl_append_xiph_header(&ci_ret->codec_header,
                           header_codebooks.packet, header_codebooks.bytes);
   
   ci_ret->id = GAVL_CODEC_ID_VORBIS;
