@@ -727,12 +727,16 @@ bg_ogg_create_comment_packet(const uint8_t * prefix,
   /* Write mandatory fields */
   
   op->packet = malloc(len + prefix_len);
-  op->bytes = len;
+  op->bytes = len + prefix_len;
   
   if(prefix_len)
     memcpy(op->packet, prefix, prefix_len);
 
   memcpy(op->packet + prefix_len, ptr, len);
+
+  fprintf(stderr, "Built comment packet:\n");
+  gavl_hexdump(op->packet, op->bytes, 16);
+  
   free(ptr);
   gavf_io_destroy(io);
   }
