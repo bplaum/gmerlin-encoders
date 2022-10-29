@@ -107,12 +107,6 @@ dnl
 
 GMERLIN_CHECK_SHOUT
 
-dnl
-dnl schroedinger
-dnl
-
-GMERLIN_CHECK_SCHROEDINGER
-
 
 dnl
 dnl Check if we have at least one video encoder

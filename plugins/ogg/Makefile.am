@@ -28,14 +28,6 @@ speex_plugins =
 speex_sources =
 endif
 
-if HAVE_SCHROEDINGER
-schroedinger_sources = schroedinger.c
-schroedinger_plugins = c_schroedingerenc.la
-else
-schroedinger_sources =
-schroedinger_plugins =
-endif
-
 
 if HAVE_OPUS
 opus_plugins = e_opus.la c_opusenc.la
@@ -68,9 +60,7 @@ $(speex_plugins) \
 $(opus_plugins) \
 $(flac_plugins) \
 $(shout_plugins) \
-$(oggvideo_plugins) \
-$(schroedinger_plugins)
-
+$(oggvideo_plugins)
 
 AM_CFLAGS = -DLOCALE_DIR=\"$(localedir)\"
 
@@ -84,7 +74,6 @@ e_oggvideo_la_CFLAGS = \
 @SPEEX_CFLAGS@ \
 @FLAC_CFLAGS@ \
 @OPUS_CFLAGS@ \
-@SCHROEDINGER_CFLAGS@ \
 $(AM_CFLAGS)
 
 e_oggvideo_la_SOURCES = \
@@ -94,7 +83,6 @@ $(speex_sources) \
 $(flac_sources) \
 $(opus_sources) \
 $(theora_sources) \
-$(schroedinger_sources) \
 ogg_common.c
 
 e_oggvideo_la_LIBADD = \
@@ -105,7 +93,6 @@ $(top_builddir)/lib/libgmerlin_encoders.la \
 @THEORADEC_LIBS@ \
 @SPEEX_LIBS@ \
 @OPUS_LIBS@ \
-@SCHROEDINGER_LIBS@ \
 $(bgflac_libs)
 
 
@@ -137,22 +124,6 @@ c_theoraenc_la_LIBADD = \
 $(top_builddir)/lib/libgmerlin_encoders.la \
 @THEORAENC_LIBS@ \
 @THEORADEC_LIBS@
-
-
-c_schroedingerenc_la_CFLAGS = \
-@SCHROEDINGER_CFLAGS@ \
-$(AM_CFLAGS)
-
-c_schroedingerenc_la_SOURCES = \
-schroedinger.c \
-c_schroedingerenc.c \
-ogg_common.c
-
-c_schroedingerenc_la_LIBADD = \
-$(top_builddir)/lib/libgmerlin_encoders.la \
-@SCHROEDINGER_LIBS@ \
-@OGG_LIBS@
-
 
 c_vorbisenc_la_CFLAGS = \
 @VORBIS_CFLAGS@ $(AM_CFLAGS)
