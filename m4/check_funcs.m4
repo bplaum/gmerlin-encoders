@@ -205,44 +205,6 @@ export PKG_CONFIG_PATH="$pkg_config_path_save"
 ])
 
 dnl
-dnl Check for speex
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_SPEEX],[
-
-AH_TEMPLATE([HAVE_SPEEX],
-            [Do we have speex installed?])
-
-have_speex="false"
-
-SPEEX_REQUIRED="1.0.4"
-
-AC_ARG_ENABLE(speex,
-[AC_HELP_STRING([--disable-speex],[Disable speex (default: autodetect)])],
-[case "${enableval}" in
-   yes) test_speex=true ;;
-   no)  test_speex=false ;;
-esac],[test_speex=true])
-
-if test x$test_speex = xtrue; then
-
-PKG_CHECK_MODULES(SPEEX, speex >= $SPEEX_REQUIRED, have_speex="true", have_speex="false")
-
-fi
-
-AC_SUBST(SPEEX_REQUIRED)
-AC_SUBST(SPEEX_LIBS)
-AC_SUBST(SPEEX_CFLAGS)
-
-AM_CONDITIONAL(HAVE_SPEEX, test x$have_speex = xtrue)
-
-if test "x$have_speex" = "xtrue"; then
-AC_DEFINE([HAVE_SPEEX])
-fi
-
-])
-
-dnl
 dnl Check for pulseaudio
 dnl
 

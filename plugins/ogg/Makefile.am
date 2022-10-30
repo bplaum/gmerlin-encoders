@@ -20,15 +20,6 @@ theoraenc_plugins =
 theora_sources = 
 endif
 
-if HAVE_SPEEX
-speex_plugins = e_speex.la c_speexenc.la
-speex_sources = speex.c
-else
-speex_plugins =
-speex_sources =
-endif
-
-
 if HAVE_OPUS
 opus_plugins = e_opus.la c_opusenc.la
 opus_sources = opus.c
@@ -56,7 +47,6 @@ gmerlin_plugin_LTLIBRARIES = \
 e_vorbis.la \
 c_vorbisenc.la \
 $(theoraenc_plugins) \
-$(speex_plugins) \
 $(opus_plugins) \
 $(flac_plugins) \
 $(shout_plugins) \
@@ -71,7 +61,6 @@ e_vorbis_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@
 e_oggvideo_la_CFLAGS = \
 @THEORAENC_CFLAGS@ \
 @VORBIS_CFLAGS@ \
-@SPEEX_CFLAGS@ \
 @FLAC_CFLAGS@ \
 @OPUS_CFLAGS@ \
 $(AM_CFLAGS)
@@ -79,7 +68,6 @@ $(AM_CFLAGS)
 e_oggvideo_la_SOURCES = \
 e_oggvideo.c \
 vorbis.c \
-$(speex_sources) \
 $(flac_sources) \
 $(opus_sources) \
 $(theora_sources) \
@@ -91,18 +79,14 @@ $(top_builddir)/lib/libgmerlin_encoders.la \
 @VORBIS_LIBS@ \
 @THEORAENC_LIBS@ \
 @THEORADEC_LIBS@ \
-@SPEEX_LIBS@ \
 @OPUS_LIBS@ \
 $(bgflac_libs)
 
 
-b_ogg_la_CFLAGS = @THEORAENC_CFLAGS@ @THEORADEC_LIBS@ @VORBIS_CFLAGS@ @OPUS_CFLAGS@ @SPEEX_CFLAGS@  $(AM_CFLAGS)
-b_ogg_la_SOURCES = b_ogg.c vorbis.c $(speex_sources) $(opus_sources) theora.c ogg_common.c
-b_ogg_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@ @VORBIS_LIBS@ @THEORAENC_LIBS@ @THEORADEC_LIBS@ @SPEEX_LIBS@ @OPUS_LIBS@ $(bgshout_libs)
+b_ogg_la_CFLAGS = @THEORAENC_CFLAGS@ @THEORADEC_LIBS@ @VORBIS_CFLAGS@ @OPUS_CFLAGS@  $(AM_CFLAGS)
+b_ogg_la_SOURCES = b_ogg.c vorbis.c $(opus_sources) theora.c ogg_common.c
+b_ogg_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@ @VORBIS_LIBS@ @THEORAENC_LIBS@ @THEORADEC_LIBS@ @OPUS_LIBS@ $(bgshout_libs)
 
-e_speex_la_CFLAGS = @SPEEX_CFLAGS@ $(AM_CFLAGS)
-e_speex_la_SOURCES = e_speex.c speex.c ogg_common.c
-e_speex_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @SPEEX_LIBS@ @OGG_LIBS@ 
 
 e_opus_la_CFLAGS = @OPUS_CFLAGS@ $(AM_CFLAGS)
 e_opus_la_SOURCES = e_opus.c opus.c ogg_common.c
@@ -137,21 +121,6 @@ c_vorbisenc_la_LIBADD = \
 $(top_builddir)/lib/libgmerlin_encoders.la \
 @VORBISENC_LIBS@ \
 @VORBIS_LIBS@ 
-
-
-c_speexenc_la_CFLAGS = \
-@SPEEX_CFLAGS@ $(AM_CFLAGS)
-
-c_speexenc_la_SOURCES = \
-speex.c \
-c_speexenc.c \
-ogg_common.c
-
-c_speexenc_la_LIBADD = \
-$(top_builddir)/lib/libgmerlin_encoders.la \
-@SPEEX_LIBS@ \
-@OGG_LIBS@
-
 
 c_opusenc_la_CFLAGS = \
 @OPUS_CFLAGS@ $(AM_CFLAGS)
