@@ -651,8 +651,8 @@ static void set_audio_parameter_flac(void * data, int stream,
 /* Compressed packet support */
 
 static int writes_compressed_audio_flac(void * priv,
-                            const gavl_audio_format_t * format,
-                            const gavl_compression_info_t * info)
+                                        const gavl_audio_format_t * format,
+                                        const gavl_compression_info_t * info)
   {
   if((info->id == GAVL_CODEC_ID_FLAC) && (info->codec_header.len == 42))
     return 1;

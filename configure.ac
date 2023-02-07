@@ -107,8 +107,7 @@ dnl Check if we have at least one video encoder
 dnl available
 dnl 
 
-AM_CONDITIONAL(HAVE_OGG_VIDEO,
-               test "x$have_theora" = "xtrue" -o "x$have_schroedinger" = "xtrue")
+AM_CONDITIONAL(HAVE_OGG_VIDEO, test "x$have_theoraenc" = "xtrue")
 
 dnl
 dnl CFLAGS
@@ -183,13 +182,6 @@ else
 echo "Missing (Go to: http://www.theora.org/)"
 fi
 
-echo -n "speex:        "
-if test "x$have_speex" = "xtrue"; then
-echo "Found (CFLAGS=$SPEEX_CFLAGS LIBS=$SPEEX_LIBS)"
-else
-echo "Missing (Go to: http://www.speex.org/)"
-fi
-
 echo -n "opus:         "
 if test "x$have_opus" = "xtrue"; then
 echo "Found (CFLAGS=$OPUS_CFLAGS LIBS=$OPUS_LIBS)"
@@ -226,12 +218,6 @@ else
 echo "Missing (Go to: http://icecast.org/)"
 fi
 
-echo -n "schroedinger: "
-if test "x$have_schroedinger" = "xtrue"; then
-echo "Found (CFLAGS=$SCHROEDINGER_CFLAGS LIBS=$SCHROEDINGER_LIBS)"
-else
-echo "Missing (Go to: http://diracvideo.org/)"
-fi
 
 echo
 echo "If you installed a library but it was not detected, check the file INSTALL"

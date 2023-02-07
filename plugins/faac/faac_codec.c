@@ -434,11 +434,16 @@ gavl_audio_sink_t * bg_faac_open(bg_faac_t * ctx,
   if(ci)
     {
     unsigned long SizeOfDecoderSpecificInfo;
+    uint8_t * DecoderSpecificInfo;
+    
     ci->id = GAVL_CODEC_ID_AAC;
-
-    faacEncGetDecoderSpecificInfo(ctx->enc, &ci->global_header,
+    
+    faacEncGetDecoderSpecificInfo(ctx->enc, &DecoderSpecificInfo,
                                   &SizeOfDecoderSpecificInfo);
-    ci->global_header_len = SizeOfDecoderSpecificInfo;
+    
+    gavl_buffer_append_data(&ci->codec_header, DecoderSpecificInfo,
+                            SizeOfDecoderSpecificInfo);
+    
     ci->pre_skip = FAAC_DELAY;
     gavl_dictionary_set_string_nocopy(m, GAVL_META_SOFTWARE,
                             bg_sprintf("libfaac %s", ctx->enc_config->name));

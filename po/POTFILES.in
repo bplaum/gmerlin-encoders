@@ -7,6 +7,9 @@ lib/vorbiscomment.c
 lib/id3v1.c
 lib/bgshout.c
 lib/bgflac.c
+raspi-build-debug/include/config.h
+pc-build-normal/include/config.h
+raspi-build-normal/include/config.h
 plugins/faac/c_faac.c
 plugins/faac/faac_codec.h
 plugins/faac/e_faac.c
@@ -20,15 +23,11 @@ plugins/lame/bglame.c
 plugins/lame/bglame.h
 plugins/ogg/_codec_plugin.c
 plugins/ogg/flac.c
-plugins/ogg/c_schroedingerenc.c
 plugins/ogg/e_opus.c
-plugins/ogg/speex.c
 plugins/ogg/ogg_common.h
 plugins/ogg/vorbis.c
 plugins/ogg/opus.c
-plugins/ogg/schroedinger.c
 plugins/ogg/c_opusenc.c
-plugins/ogg/e_speex.c
 plugins/ogg/ogg_common.c
 plugins/ogg/c_flacenc.c
 plugins/ogg/c_vorbisenc.c
@@ -37,7 +36,6 @@ plugins/ogg/e_vorbis.c
 plugins/ogg/c_theoraenc.c
 plugins/ogg/b_ogg.c
 plugins/ogg/theora.c
-plugins/ogg/schro_settings.c
 plugins/ogg/c_speexenc.c
 plugins/ffmpeg/e_ffmpeg.c
 plugins/ffmpeg/c_ffmpeg_alaw.c
@@ -60,3 +58,4 @@ plugins/ffmpeg/c_ffmpeg_ulaw.c
 plugins/ffmpeg/c_ffmpeg_ac3.c
 plugins/ffmpeg/e_ffmpeg_video.c
 plugins/flac/e_flac.c
+pc-build-debug/include/config.h
