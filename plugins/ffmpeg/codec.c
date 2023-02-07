@@ -438,8 +438,6 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   gavl_audio_frame_mute(ctx->aframe, fmt);
   ctx->aframe->valid_samples = 0;
   
-  gavl_packet_alloc(&ctx->gp, 32768);
-  
   ctx->asink = gavl_audio_sink_create(NULL, write_audio_func, ctx, fmt);
   
   /* Copy format for later use */
@@ -745,8 +743,6 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
     }
   
   ctx->pc = bg_encoder_pts_cache_create();
-  
-  //  gavl_packet_alloc(&ctx->gp, fmt->image_width * fmt->image_width * 4);
   
   gavl_video_format_copy(&ctx->vfmt, fmt);
 
