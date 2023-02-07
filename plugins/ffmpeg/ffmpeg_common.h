@@ -120,7 +120,6 @@ struct bg_ffmpeg_codec_context_s
   {
   AVCodec * codec;
   
-  AVCodecContext * avctx_priv;
   AVCodecContext * avctx;
   
   gavl_packet_sink_t * psink;

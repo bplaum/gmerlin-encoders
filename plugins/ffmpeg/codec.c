@@ -59,8 +59,6 @@ static int find_encoder(bg_ffmpeg_codec_context_t * ctx)
     return 0;
     }
   
-  /* Set codec deftaults */
-  avcodec_get_context_defaults3(ctx->avctx, ctx->codec);
   return 1;
   }
 
@@ -85,17 +83,17 @@ bg_ffmpeg_codec_context_t * bg_ffmpeg_codec_create(int type,
   ret->id = id;
   ret->type = type;
   
-  /* Create private codec context */
-  ret->avctx_priv = avcodec_alloc_context3(NULL);
-  ret->avctx = ret->avctx_priv;
-  
   if(!find_encoder(ret))
+    goto fail;
+  
+  if(!(ret->avctx = avcodec_alloc_context3(ret->codec)))
     {
-    av_free(ret->avctx_priv);
-    free(ret);
-    return NULL;
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+             "Context for Codec %s could not be initialized",
+             bg_ffmpeg_get_codec_name(ret->id));
+    goto fail;
     }
-
+  
   /* Get codec context from format context */
   if(params)
     avcodec_parameters_to_context(ret->avctx, params);
@@ -106,6 +104,13 @@ bg_ffmpeg_codec_context_t * bg_ffmpeg_codec_create(int type,
   ret->frame = av_frame_alloc();
   
   return ret;
+
+  fail:
+
+  if(ret->avctx)
+    avcodec_free_context(&ret->avctx);
+  free(ret);
+  return NULL;
   }
 
 const bg_parameter_info_t * bg_ffmpeg_codec_get_parameters(bg_ffmpeg_codec_context_t * ctx)
@@ -822,21 +827,10 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
   if(!(ctx->flags & FLAG_FLUSHED))
     bg_ffmpeg_codec_flush(ctx);
   
-  /* Close */
-
-  if(ctx->avctx->stats_in)
-    {
-    free(ctx->avctx->stats_in);
-    ctx->avctx->stats_in = NULL;
-    }
-//  if(ctx->flags & FLAG_INITIALIZED)
-    avcodec_close(ctx->avctx);
-  
   /* Destroy */
+  if(ctx->avctx)
+    avcodec_free_context(&ctx->avctx);
 
-  if(ctx->avctx_priv)
-    av_free(ctx->avctx_priv);
-  
   if(ctx->pc)
     bg_encoder_pts_cache_destroy(ctx->pc);
   
@@ -861,7 +855,9 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
   
   if(ctx->stats_file)
     fclose(ctx->stats_file);
-  
+
+  /* Prevent the buffer from being free()d */
+  gavl_buffer_init(&ctx->gp.buf);
   gavl_packet_free(&ctx->gp);
   free(ctx);
   }

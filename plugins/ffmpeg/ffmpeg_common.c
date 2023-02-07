@@ -690,8 +690,7 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   }
 
 
-static int open_audio_encoder(ffmpeg_priv_t * priv,
-                              bg_ffmpeg_audio_stream_t * st)
+static int open_audio_encoder(bg_ffmpeg_audio_stream_t * st)
   {
   st->com.psink = gavl_packet_sink_create(NULL, write_audio_packet_func, st);
   
@@ -710,6 +709,7 @@ static int open_audio_encoder(ffmpeg_priv_t * priv,
     return 0;
 
   copy_extradata(st->com.stream->codecpar, &st->com.ci);
+  st->com.stream->codecpar->codec_id = st->com.codec->id;
   
   bg_ffmpeg_codec_set_packet_sink(st->com.codec, st->com.psink);
   
@@ -731,8 +731,7 @@ static void set_framerate(bg_ffmpeg_video_stream_t * st)
     }
   }
 
-static int open_video_encoder(ffmpeg_priv_t * priv,
-                              bg_ffmpeg_video_stream_t * st)
+static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
   {
   st->com.psink = gavl_packet_sink_create(NULL, write_video_packet_func, st);
   if(st->com.flags & STREAM_IS_COMPRESSED)
@@ -797,13 +796,13 @@ int bg_ffmpeg_start(void * data)
   /* Open encoders */
   for(i = 0; i < priv->num_audio_streams; i++)
     {
-    if(!open_audio_encoder(priv, &priv->audio_streams[i]))
+    if(!open_audio_encoder(&priv->audio_streams[i]))
       return 0;
     }
 
   for(i = 0; i < priv->num_video_streams; i++)
     {
-    if(!open_video_encoder(priv, &priv->video_streams[i]))
+    if(!open_video_encoder(&priv->video_streams[i]))
       return 0;
     }
 
