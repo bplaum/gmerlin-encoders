@@ -240,8 +240,8 @@ typedef struct
 
   bg_ffmpeg_codec_context_t * codec;
   
-  gavl_packet_t gp;
-
+  AVPacket * pkt;
+  
   int flags;
   
   gavl_packet_sink_t * psink;
@@ -258,6 +258,7 @@ typedef struct
   bg_ffmpeg_stream_common_t com;
   gavl_audio_sink_t * sink;
   gavl_audio_format_t format;
+
   } bg_ffmpeg_audio_stream_t;
 
 typedef struct

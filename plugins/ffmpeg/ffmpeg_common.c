@@ -362,6 +362,8 @@ int bg_ffmpeg_add_audio_stream(void * data,
   
   st->com.stream = avformat_new_stream(priv->ctx, NULL);
 
+  st->com.pkt = av_packet_alloc();
+  
   bg_ffmpeg_set_audio_format_params(st->com.stream->codecpar,
                                     &st->format);
   
@@ -392,7 +394,9 @@ int bg_ffmpeg_add_video_stream(void * data,
   
   st = priv->video_streams + priv->num_video_streams;
   memset(st, 0, sizeof(*st));
-  
+
+  st->com.pkt = av_packet_alloc();
+
   gavl_video_format_copy(&st->format, format);
 
   st->com.stream = avformat_new_stream(priv->ctx, NULL);
@@ -416,7 +420,6 @@ int bg_ffmpeg_add_video_stream(void * data,
 static gavl_sink_status_t
 write_text_packet_func(void * data, gavl_packet_t * p)
   {
-  AVPacket pkt;
   bg_ffmpeg_text_stream_t * st = data;
 
   ffmpeg_priv_t * priv = st->com.ffmpeg;
@@ -425,32 +428,30 @@ write_text_packet_func(void * data, gavl_packet_t * p)
   bg_dprintf("write_text_packet\n");
   gavl_packet_dump(p);
 #endif
-
   
-  av_init_packet(&pkt);
-  
-  pkt.data     = p->buf.buf;
-  pkt.size     = p->buf.len + 1; // Let's hope the packet got padded!!!
+  st->com.pkt->data    = p->buf.buf;
+  st->com.pkt->size     = p->buf.len + 1; // Let's hope the packet got padded!!!
 
 #if 1
-  pkt.pts= av_rescale_q(p->pts,
-                        st->time_base,
-                        st->com.stream->time_base);
+  st->com.pkt->pts= av_rescale_q(p->pts,
+                                 st->time_base,
+                                 st->com.stream->time_base);
   
-  pkt.duration= av_rescale_q(p->duration,
-                             st->time_base,
-                             st->com.stream->time_base);
+  st->com.pkt->duration= av_rescale_q(p->duration,
+                                      st->time_base,
+                                      st->com.stream->time_base);
 #endif
   
   //  pkt.convergence_duration = pkt.duration;
-  pkt.dts = pkt.pts;
-  pkt.stream_index = st->com.stream->index;
+  st->com.pkt->dts = st->com.pkt->pts;
+  st->com.pkt->stream_index = st->com.stream->index;
   
-  if(av_interleaved_write_frame(priv->ctx, &pkt) != 0)
+  if(av_interleaved_write_frame(priv->ctx, st->com.pkt) != 0)
     {
     priv->got_error = 1;
     return GAVL_SINK_ERROR;
     }
+  st->com.pkt->data = NULL;
   return GAVL_SINK_OK;
   }
 
@@ -469,8 +470,8 @@ int bg_ffmpeg_add_text_stream(void * data,
   
   st = priv->text_streams + priv->num_text_streams;
   memset(st, 0, sizeof(*st));
-
   
+  st->com.pkt = av_packet_alloc();
   st->com.stream = avformat_new_stream(priv->ctx, NULL);
   st->com.stream->codecpar->codec_type = AVMEDIA_TYPE_SUBTITLE;
   
@@ -586,7 +587,6 @@ static int64_t rescale_video_timestamp(bg_ffmpeg_video_stream_t * st,
 static gavl_sink_status_t
 write_video_packet_func(void * priv, gavl_packet_t * packet)
   {
-  AVPacket pkt;
   bg_ffmpeg_video_stream_t * st = priv;
   ffmpeg_priv_t * f = st->com.ffmpeg;
 
@@ -598,12 +598,12 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
   if(packet->pts == GAVL_TIME_UNDEFINED)
     return 1; // Drop undecodable packet
   
-  av_init_packet(&pkt);
-  pkt.data = packet->buf.buf;
-  pkt.size = packet->buf.len;
+  
+  st->com.pkt->data = packet->buf.buf;
+  st->com.pkt->size = packet->buf.len;
 
-  pkt.pts      = rescale_video_timestamp(st, packet->pts);
-  pkt.duration = rescale_video_timestamp(st, packet->duration);
+  st->com.pkt->pts      = rescale_video_timestamp(st, packet->pts);
+  st->com.pkt->duration = rescale_video_timestamp(st, packet->duration);
   
   //  fprintf(stderr, "PTS: %"PRId64" Duration: %"PRId64"\n", pkt.pts, pkt.duration);
 
@@ -611,25 +611,27 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
     {
     if(st->dts == GAVL_TIME_UNDEFINED)
       st->dts = packet->pts - 3*packet->duration;
-
-    pkt.dts= rescale_video_timestamp(st, st->dts);
+    
+    st->com.pkt->dts= rescale_video_timestamp(st, st->dts);
     st->dts += packet->duration;
     }
   else
-    pkt.dts = pkt.pts;
+    st->com.pkt->dts = st->com.pkt->pts;
   
   if(packet->flags & GAVL_PACKET_KEYFRAME)  
-    pkt.flags |= AV_PKT_FLAG_KEY;
+    st->com.pkt->flags |= AV_PKT_FLAG_KEY;
+  else
+    st->com.pkt->flags &= ~AV_PKT_FLAG_KEY;
   
-  pkt.stream_index= st->com.stream->index;
+  st->com.pkt->stream_index= st->com.stream->index;
   
   /* write the compressed frame in the media file */
-  if(av_interleaved_write_frame(f->ctx, &pkt) != 0)
+  if(av_interleaved_write_frame(f->ctx, st->com.pkt) != 0)
     {
     f->got_error = 1;
     return GAVL_SINK_ERROR;
     }
-
+  st->com.pkt->data = NULL;
   return GAVL_SINK_OK;
   }
 
@@ -649,36 +651,32 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   
   if(packet->pts == GAVL_TIME_UNDEFINED)
     return 1; // Drop undecodable packet
-  
-  av_init_packet(&pkt);
-
-  pkt.data = packet->buf.buf;
-  pkt.size = packet->buf.len;
+    
+  st->com.pkt->data = packet->buf.buf;
+  st->com.pkt->size = packet->buf.len;
 
   time_base.num = 1;
   time_base.den = st->format.samplerate;
   
-  pkt.pts= av_rescale_q(packet->pts,
-                        time_base,
-                        st->com.stream->time_base);
+  st->com.pkt->pts= av_rescale_q(packet->pts,
+                                 time_base,
+                                 st->com.stream->time_base);
   
-  pkt.duration= av_rescale_q(packet->duration,
-                             time_base,
-                             st->com.stream->time_base);
+  st->com.pkt->duration= av_rescale_q(packet->duration,
+                                      time_base,
+                                      st->com.stream->time_base);
   
-  pkt.dts = pkt.pts;
+  st->com.pkt->dts = pkt.pts;
 
   if(st->com.ci.flags & GAVL_COMPRESSION_SBR)
     {
-    pkt.pts /= 2;
-    pkt.dts /= 2;
-    pkt.duration /= 2;
+    st->com.pkt->pts /= 2;
+    st->com.pkt->dts /= 2;
+    st->com.pkt->duration /= 2;
     }
   
-  pkt.flags |= AV_PKT_FLAG_KEY;
-  pkt.stream_index= st->com.stream->index;
-
-  
+  st->com.pkt->flags |= AV_PKT_FLAG_KEY;
+  st->com.pkt->stream_index= st->com.stream->index;
   
   /* write the compressed frame in the media file */
   if(av_interleaved_write_frame(f->ctx, &pkt) != 0)
@@ -686,6 +684,7 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
     f->got_error = 1;
     return GAVL_SINK_ERROR;
     }
+  st->com.pkt->data = NULL;
   return GAVL_SINK_OK;
   }
 
@@ -945,6 +944,8 @@ int bg_ffmpeg_close(void * data, int do_delete)
     close_audio_encoder(priv, st);
     if(st->com.psink)
       gavl_packet_sink_destroy(st->com.psink);
+    if(st->com.pkt)
+      av_packet_free(&st->com.pkt);
     }
   for(i = 0; i < priv->num_video_streams; i++)
     {
@@ -952,6 +953,8 @@ int bg_ffmpeg_close(void * data, int do_delete)
     close_video_encoder(priv, st);
     if(st->com.psink)
       gavl_packet_sink_destroy(st->com.psink);
+    if(st->com.pkt)
+      av_packet_free(&st->com.pkt);
     }
   for(i = 0; i < priv->num_text_streams; i++)
     {
@@ -959,6 +962,8 @@ int bg_ffmpeg_close(void * data, int do_delete)
     close_text_encoder(priv, st);
     if(st->com.psink)
       gavl_packet_sink_destroy(st->com.psink);
+    if(st->com.pkt)
+      av_packet_free(&st->com.pkt);
     }
   
   if(do_delete && !priv->io)
