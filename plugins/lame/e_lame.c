@@ -133,7 +133,7 @@ static const bg_parameter_info_t parameters[] =
       .name =        "add_cover",
       .long_name =   TRS("Add cover to ID3V2 tag if available"),
       .type =        BG_PARAMETER_CHECKBUTTON,
-      .val_default = GAVL_VALUE_INIT_INT(1),
+      .val_default = GAVL_VALUE_INIT_INT(0),
     },
     { /* End of parameters */ }
   };

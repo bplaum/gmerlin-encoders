@@ -199,7 +199,7 @@ static const bg_parameter_info_t parameters[] =
       .name =        "add_cover",
       .long_name =   TRS("Add cover"),
       .type =        BG_PARAMETER_CHECKBUTTON,
-      .val_default = GAVL_VALUE_INIT_INT(1),
+      .val_default = GAVL_VALUE_INIT_INT(0),
       .help_string = TRS("Write the album cover to the flac file if available")
     },
     {
