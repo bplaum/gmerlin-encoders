@@ -50,8 +50,7 @@ void * bg_ogg_encoder_create()
 
 static void free_stream(bg_ogg_stream_t * s)
   {
-  gavl_compression_info_free(&s->ci);
-  gavl_dictionary_free(&s->m_stream);
+  gavl_dictionary_free(&s->s);
   if(s->stats_file)
     free(s->stats_file);
   gavl_packet_free(&s->last_packet);
@@ -279,8 +278,7 @@ static int flush_stream(bg_ogg_stream_t * s)
 
 static bg_ogg_stream_t * append_stream(bg_ogg_encoder_t * e,
                                        bg_ogg_stream_t ** streams_p,
-                                       int * num_streams_p,
-                                       const gavl_dictionary_t * m)
+                                       int * num_streams_p)
   {
   bg_ogg_stream_t * ret;
   bg_ogg_stream_t * streams = *streams_p;
@@ -293,8 +291,6 @@ static bg_ogg_stream_t * append_stream(bg_ogg_encoder_t * e,
   
   memset(ret, 0, sizeof(*ret));
   ogg_stream_init(&ret->os, e->serialno++);
-  
-  gavl_dictionary_copy(&ret->m_stream, m);
   
   ret->enc = e;
   ret->index = num_streams;
@@ -312,11 +308,16 @@ bg_ogg_encoder_add_audio_stream(void * data,
                                 const gavl_dictionary_t * m,
                                 const gavl_audio_format_t * format)
   {
+  gavl_dictionary_t * m_stream;
   bg_ogg_stream_t * s;
   bg_ogg_encoder_t * e = data;
-  s = append_stream(e, &e->audio_streams, &e->num_audio_streams, m);
-  gavl_audio_format_copy(&s->afmt, format);
-  gavl_metadata_delete_compression_fields(&s->m_stream);
+  s = append_stream(e, &e->audio_streams, &e->num_audio_streams);
+  gavl_init_audio_stream(&s->s);
+  m_stream = gavl_stream_get_metadata_nc(&s->s);
+  gavl_dictionary_copy(m_stream, m);
+  gavl_metadata_delete_compression_fields(m_stream);
+  
+  gavl_audio_format_copy(gavl_stream_get_audio_format_nc(&s->s), format);
   return s;
   }
 
@@ -325,11 +326,18 @@ bg_ogg_encoder_add_video_stream(void * data,
                                 const gavl_dictionary_t * m,
                                 const gavl_video_format_t * format)
   {
+  gavl_dictionary_t * m_stream;
   bg_ogg_stream_t * s;
   bg_ogg_encoder_t * e = data;
-  s = append_stream(e, &e->video_streams, &e->num_video_streams, m);
-  gavl_video_format_copy(&s->vfmt, format);
-  gavl_metadata_delete_compression_fields(&s->m_stream);
+  s = append_stream(e, &e->video_streams, &e->num_video_streams);
+
+  gavl_init_video_stream(&s->s);
+  m_stream = gavl_stream_get_metadata_nc(&s->s);
+  gavl_dictionary_copy(m_stream, m);
+  gavl_metadata_delete_compression_fields(m_stream);
+  
+  gavl_video_format_copy(gavl_stream_get_video_format_nc(&s->s), format);
+  gavl_metadata_delete_compression_fields(m_stream);
   return s;
   }
 
@@ -339,11 +347,18 @@ bg_ogg_encoder_add_audio_stream_compressed(void * data,
                                            const gavl_audio_format_t * format,
                                            const gavl_compression_info_t * ci)
   {
+  gavl_dictionary_t * m_stream;
   bg_ogg_stream_t * s;
   bg_ogg_encoder_t * e = data;
-  s = append_stream(e, &e->audio_streams, &e->num_audio_streams, m);
-  gavl_compression_info_copy(&s->ci, ci);
-  gavl_audio_format_copy(&s->afmt, format);
+  s = append_stream(e, &e->audio_streams, &e->num_audio_streams);
+
+  gavl_init_audio_stream(&s->s);
+  m_stream = gavl_stream_get_metadata_nc(&s->s);
+  gavl_dictionary_copy(m_stream, m);
+  gavl_metadata_delete_compression_fields(m_stream);
+  gavl_stream_set_compression_info(&s->s, ci);
+  
+  gavl_audio_format_copy(gavl_stream_get_audio_format_nc(&s->s), format);
   s->flags |= STREAM_COMPRESSED;
   return s;
   }
@@ -354,11 +369,17 @@ bg_ogg_encoder_add_video_stream_compressed(void * data,
                                            const gavl_video_format_t * format,
                                            const gavl_compression_info_t * ci)
   {
+  gavl_dictionary_t * m_stream;
   bg_ogg_stream_t * s;
   bg_ogg_encoder_t * e = data;
-  s = append_stream(e, &e->video_streams, &e->num_video_streams, m);
-  gavl_compression_info_copy(&s->ci, ci);
-  gavl_video_format_copy(&s->vfmt, format);
+  s = append_stream(e, &e->video_streams, &e->num_video_streams);
+
+  gavl_init_video_stream(&s->s);
+  m_stream = gavl_stream_get_metadata_nc(&s->s);
+  gavl_dictionary_copy(m_stream, m);
+  gavl_metadata_delete_compression_fields(m_stream);
+  gavl_stream_set_compression_info(&s->s, ci);
+  gavl_video_format_copy(gavl_stream_get_video_format_nc(&s->s), format);
   s->flags |= STREAM_COMPRESSED;
   return s;
   }
@@ -413,15 +434,12 @@ static int start_audio(bg_ogg_encoder_t * e, int stream)
     }
   else
     {
-    if(!(s->asink = s->codec->init_audio(s->codec_priv, &s->ci,
-                                         &s->afmt, &s->m_stream)))
+    
+    if(!(s->asink = s->codec->init_audio(s->codec_priv, &s->s)))
       return 0;
     
-    if(s->ci.id != GAVL_CODEC_ID_NONE)
-      {
-      if(!s->codec->init_audio_compressed(s))
-        return 0;
-      }
+    if(!s->codec->init_audio_compressed(s))
+      return 0;
     }
   s->psink_out = gavl_packet_sink_create(NULL, write_gavl_packet, s);
   s->codec->set_packet_sink(s->codec_priv, s->psink_out);
@@ -439,9 +457,7 @@ static int start_video(bg_ogg_encoder_t * e, int stream)
     }
   else
     {
-    if(!(s->vsink = s->codec->init_video(s->codec_priv, &s->ci,
-                                         &s->vfmt,
-                                         &s->m_stream)))
+    if(!(s->vsink = s->codec->init_video(s->codec_priv, &s->s)))
       return 0;
     
     if(s->pass)
@@ -456,7 +472,6 @@ static int start_video(bg_ogg_encoder_t * e, int stream)
                                      s->stats_file))
           return 0;
       }
-    
     if(!s->codec->init_video_compressed(s))
       return 0;
     }

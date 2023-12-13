@@ -155,14 +155,19 @@ static const uint8_t comment_header[7] = { 0x03, 'v', 'o', 'r', 'b', 'i', 's' };
 
 static int init_compressed_vorbis(bg_ogg_stream_t * s)
   {
+  int ret = 0;
   ogg_packet packet;
   int len;
-    
+  gavl_compression_info_t ci;
+  
   memset(&packet, 0, sizeof(packet));
+
+  gavl_compression_info_init(&ci);
+  gavl_stream_get_compression_info(&s->s, &ci);
   
   /* Write ID packet */
 
-  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
+  packet.packet = gavl_extract_xiph_header(&ci.codec_header,
                                            0, &len);
 
   if(!packet.packet)
@@ -177,10 +182,11 @@ static int init_compressed_vorbis(bg_ogg_stream_t * s)
     return 0;
   
   /* Build comment packet */
-
+  
   bg_ogg_create_comment_packet(comment_header, 7,
-                               &s->m_stream, s->m_global, 1, &packet);
-
+                               gavl_dictionary_get_dictionary_create(&s->s, GAVL_META_METADATA),
+                               s->m_global, 1, &packet);
+  
   if(!bg_ogg_stream_write_header_packet(s, &packet))
     return 0;
 
@@ -188,20 +194,27 @@ static int init_compressed_vorbis(bg_ogg_stream_t * s)
   
   /* Codepages */
 
-  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
+  packet.packet = gavl_extract_xiph_header(&ci.codec_header,
                                            2, &len);
   
   if(!packet.packet)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken vorbis header");
-    return 0;
+    goto fail;
     }
   
   packet.bytes  = len;
   
   if(!bg_ogg_stream_write_header_packet(s, &packet))
-    return 0;
-  return 1;
+    goto fail;
+  
+  ret = 1;
+  
+  fail:
+  
+  gavl_compression_info_free(&ci);
+  
+  return ret;
   }
 
 static void set_packet_sink(void * data, gavl_packet_sink_t * psink)
@@ -285,9 +298,7 @@ write_audio_frame_vorbis(void * data, gavl_audio_frame_t * frame)
 
 
 static gavl_audio_sink_t * init_vorbis(void * data,
-                                       gavl_compression_info_t * ci_ret,
-                                       gavl_audio_format_t * format,
-                                       gavl_dictionary_t * stream_metadata)
+                                       gavl_dictionary_t * s)
   {
   ogg_packet header_main;
   ogg_packet header_comments;
@@ -298,8 +309,11 @@ static gavl_audio_sink_t * init_vorbis(void * data,
   uint8_t * ptr;
   char * vendor;
   int vendor_len;
+  gavl_compression_info_t ci;
+
+  gavl_compression_info_init(&ci);
   
-  vorbis->format = format;
+  vorbis->format = gavl_stream_get_audio_format_nc(s);
   vorbis->frame = gavl_audio_frame_create(NULL);
   
   vorbis->managed = 0;
@@ -349,19 +363,23 @@ static gavl_audio_sink_t * init_vorbis(void * data,
   vendor_len = GAVL_PTR_2_32LE(ptr); ptr += 4;
   vendor = calloc(1, vendor_len + 1);
   memcpy(vendor, ptr, vendor_len);
-  gavl_dictionary_set_string_nocopy(stream_metadata, GAVL_META_SOFTWARE, vendor);
+  gavl_dictionary_set_string_nocopy(gavl_dictionary_get_dictionary_create(s, GAVL_META_METADATA),
+                                    GAVL_META_SOFTWARE, vendor);
   /* And stream them out */
 
-  gavl_append_xiph_header(&ci_ret->codec_header,
+  gavl_append_xiph_header(&ci.codec_header,
                           header_main.packet, header_main.bytes);
 
-  gavl_append_xiph_header(&ci_ret->codec_header,
+  gavl_append_xiph_header(&ci.codec_header,
                           header_comments.packet, header_comments.bytes);
 
-  gavl_append_xiph_header(&ci_ret->codec_header,
+  gavl_append_xiph_header(&ci.codec_header,
                           header_codebooks.packet, header_codebooks.bytes);
   
-  ci_ret->id = GAVL_CODEC_ID_VORBIS;
+  ci.id = GAVL_CODEC_ID_VORBIS;
+  gavl_stream_set_compression_info(s, &ci);
+  gavl_compression_info_free(&ci);
+    
   return gavl_audio_sink_create(NULL, write_audio_frame_vorbis,
                                 vorbis, vorbis->format);
   }

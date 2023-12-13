@@ -56,21 +56,16 @@ static void set_parameter(void * priv, const char * name, const gavl_value_t * v
 
 #ifdef IS_AUDIO
 static gavl_audio_sink_t * open_audio(void * priv,
-                                      gavl_compression_info_t * ci,
-                                      gavl_audio_format_t * fmt,
-                                      gavl_dictionary_t * m)
+                                      gavl_dictionary_t * s)
   {
   stream_codec_t * c = priv;
-  return c->codec->init_audio(c->priv, ci, fmt, m);
+  return c->codec->init_audio(c->priv, s);
   }
 #else
-static gavl_video_sink_t * open_video(void * priv,
-                                      gavl_compression_info_t * ci,
-                                      gavl_video_format_t * fmt,
-                                      gavl_dictionary_t * m)
+static gavl_video_sink_t * open_video(void * priv, gavl_dictionary_t * s)
   {
   stream_codec_t * c = priv;
-  return c->codec->init_video(c->priv, ci, fmt, m);
+  return c->codec->init_video(c->priv, s);
   }
 #endif
 

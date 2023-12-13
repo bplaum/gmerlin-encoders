@@ -571,10 +571,19 @@ write_audio_func(void * data, gavl_audio_frame_t * frame)
   }
 
 gavl_audio_sink_t * bg_lame_open(bg_lame_t * lame,
-                                 gavl_compression_info_t * ci,
-                                 gavl_audio_format_t * fmt,
-                                 gavl_dictionary_t * m)
+                                 gavl_dictionary_t * s)
   {
+  /*
+    gavl_compression_info_t * ci,
+    gavl_dictionary_t * m
+  */
+  gavl_audio_format_t * fmt;
+  gavl_compression_info_t ci;
+
+  gavl_compression_info_init(&ci);
+  
+  fmt = gavl_stream_get_audio_format_nc(s);
+  
   /* Copy and adjust format */
   
   fmt->sample_format = GAVL_SAMPLE_FLOAT;
@@ -588,7 +597,7 @@ gavl_audio_sink_t * bg_lame_open(bg_lame_t * lame,
     fmt->channel_locations[0] = GAVL_CHID_NONE;
     gavl_set_channel_setup(fmt);
     }
-
+  
   if(lame_set_in_samplerate(lame->lame, fmt->samplerate))
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,  "lame_set_in_samplerate failed");
   if(lame_set_num_channels(lame->lame,  fmt->num_channels))
@@ -665,25 +674,22 @@ gavl_audio_sink_t * bg_lame_open(bg_lame_t * lame,
   lame->buffer_alloc = (5 * fmt->samples_per_frame) / 4 + 7200 + 4096;
   lame->buffer = malloc(lame->buffer_alloc);
   
-  if(ci)
-    {
-    ci->id = GAVL_CODEC_ID_MP3;
-    if(lame->vbr_mode == vbr_off)
-      ci->bitrate = lame->cbr_bitrate * 1000;
-    else
-      ci->bitrate = GAVL_BITRATE_VBR;
-    }
-  if(m)
-    {
-    /* Set software */
-    gavl_dictionary_set_string_nocopy(m, GAVL_META_SOFTWARE,
-                            bg_sprintf("lame %s", get_lame_version()));
-    }
+  ci.id = GAVL_CODEC_ID_MP3;
+  if(lame->vbr_mode == vbr_off)
+    ci.bitrate = lame->cbr_bitrate * 1000;
+  else
+    ci.bitrate = GAVL_BITRATE_VBR;
+
+  /* Set software */
+  gavl_dictionary_set_string_nocopy(gavl_dictionary_get_dictionary_create(s, GAVL_META_METADATA),
+                                    GAVL_META_SOFTWARE,
+                                    bg_sprintf("lame %s", get_lame_version()));
   
   /* Delay taken from ffmpeg */
   lame->delay = lame_get_encoder_delay(lame->lame) + 528 + 1; 
-  if(ci)
-    ci->pre_skip = lame->delay;
+  ci.pre_skip = lame->delay;
+  gavl_stream_set_compression_info(s, &ci);
+  
   return lame->sink;
   
   

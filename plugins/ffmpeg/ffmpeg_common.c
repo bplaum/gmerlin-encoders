@@ -357,15 +357,16 @@ int bg_ffmpeg_add_audio_stream(void * data,
   
   st = priv->audio_streams + priv->num_audio_streams;
   memset(st, 0, sizeof(*st));
-
-  gavl_audio_format_copy(&st->format, format);
+  gavl_init_audio_stream(&st->com.s);
+  st->com.m = gavl_stream_get_metadata_nc(&st->com.s);
+  
+  st->format = gavl_stream_get_audio_format_nc(&st->com.s);
   
   st->com.stream = avformat_new_stream(priv->ctx, NULL);
 
   st->com.pkt = av_packet_alloc();
   
-  bg_ffmpeg_set_audio_format_params(st->com.stream->codecpar,
-                                    &st->format);
+  bg_ffmpeg_set_audio_format_params(st->com.stream->codecpar, st->format);
   
   st->com.stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
   
@@ -395,9 +396,13 @@ int bg_ffmpeg_add_video_stream(void * data,
   st = priv->video_streams + priv->num_video_streams;
   memset(st, 0, sizeof(*st));
 
+  gavl_init_video_stream(&st->com.s);
+  st->com.m = gavl_stream_get_metadata_nc(&st->com.s);
+  st->format = gavl_stream_get_video_format_nc(&st->com.s);
+  
   st->com.pkt = av_packet_alloc();
 
-  gavl_video_format_copy(&st->format, format);
+  gavl_video_format_copy(st->format, format);
 
   st->com.stream = avformat_new_stream(priv->ctx, NULL);
   st->com.stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
@@ -563,19 +568,19 @@ static int64_t rescale_video_timestamp(bg_ffmpeg_video_stream_t * st,
   AVRational framerate;
 
   
-  if(st->format.framerate_mode == GAVL_FRAMERATE_CONSTANT)
+  if(st->format->framerate_mode == GAVL_FRAMERATE_CONSTANT)
     {
-    framerate.num = st->format.frame_duration;
-    framerate.den = st->format.timescale;
+    framerate.num = st->format->frame_duration;
+    framerate.den = st->format->timescale;
 
-    return av_rescale_q(ts / st->format.frame_duration,
+    return av_rescale_q(ts / st->format->frame_duration,
                         framerate,
                         st->com.stream->time_base);
     }
   else
     {
     framerate.num = 1;
-    framerate.den = st->format.timescale;
+    framerate.den = st->format->timescale;
     
     return av_rescale_q(ts,
                         framerate,
@@ -656,7 +661,7 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   st->com.pkt->size = packet->buf.len;
 
   time_base.num = 1;
-  time_base.den = st->format.samplerate;
+  time_base.den = st->format->samplerate;
   
   st->com.pkt->pts= av_rescale_q(packet->pts,
                                  time_base,
@@ -696,14 +701,15 @@ static int open_audio_encoder(bg_ffmpeg_audio_stream_t * st)
   if(st->com.flags & STREAM_IS_COMPRESSED)
     {
     bg_ffmpeg_set_audio_format_params(st->com.stream->codecpar,
-                                      &st->format);
+                                      st->format);
 
     if(st->com.ci.flags & GAVL_COMPRESSION_SBR)
       st->com.stream->codecpar->sample_rate /= 2;
     
     return 1;
     }
-  st->sink = bg_ffmpeg_codec_open_audio(st->com.codec, &st->com.ci, &st->format, NULL);
+
+  st->sink = bg_ffmpeg_codec_open_audio(st->com.codec, &st->com.s);
   if(!st->sink)
     return 0;
 
@@ -718,14 +724,14 @@ static int open_audio_encoder(bg_ffmpeg_audio_stream_t * st)
 
 static void set_framerate(bg_ffmpeg_video_stream_t * st)
   {
-  if(st->format.framerate_mode == GAVL_FRAMERATE_CONSTANT)
+  if(st->format->framerate_mode == GAVL_FRAMERATE_CONSTANT)
     {
-    st->com.stream->time_base.den = st->format.timescale;
-    st->com.stream->time_base.num = st->format.frame_duration;
+    st->com.stream->time_base.den = st->format->timescale;
+    st->com.stream->time_base.num = st->format->frame_duration;
     }
   else
     {
-    st->com.stream->time_base.den = st->format.timescale;
+    st->com.stream->time_base.den = st->format->timescale;
     st->com.stream->time_base.num = 1;
     }
   }
@@ -736,20 +742,18 @@ static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
   if(st->com.flags & STREAM_IS_COMPRESSED)
     {
     set_framerate(st);
-    bg_ffmpeg_set_video_dimensions_params(st->com.stream->codecpar, &st->format);
+    bg_ffmpeg_set_video_dimensions_params(st->com.stream->codecpar, st->format);
 
     st->com.stream->sample_aspect_ratio.num = st->com.stream->codecpar->sample_aspect_ratio.num;
     st->com.stream->sample_aspect_ratio.den = st->com.stream->codecpar->sample_aspect_ratio.den;
     
     return 1;
     }
-
-
-  st->sink = bg_ffmpeg_codec_open_video(st->com.codec, &st->com.ci, &st->format, NULL);
+  
+  st->sink = bg_ffmpeg_codec_open_video(st->com.codec, &st->com.s);
   if(!st->sink)
     return 0;
-
-
+  
   copy_extradata(st->com.stream->codecpar, &st->com.ci);
   st->com.stream->codecpar->codec_id = st->com.codec->id;
   
@@ -852,7 +856,7 @@ void bg_ffmpeg_get_audio_format(void * data, int stream,
   ffmpeg_priv_t * priv;
   priv = data;
 
-  gavl_audio_format_copy(ret, &priv->audio_streams[stream].format);
+  gavl_audio_format_copy(ret, priv->audio_streams[stream].format);
                          
   }
 
@@ -1057,7 +1061,7 @@ bg_ffmpeg_add_audio_stream_compressed(void * priv,
   st->com.stream->codecpar->codec_id = bg_codec_id_gavl_2_ffmpeg(st->com.ci.id);
 
   st->com.stream->time_base.num = 1;
-  st->com.stream->time_base.den = st->format.samplerate;
+  st->com.stream->time_base.den = st->format->samplerate;
   
   if(st->com.ci.bitrate)
     {

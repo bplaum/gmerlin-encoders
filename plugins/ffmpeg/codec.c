@@ -170,23 +170,56 @@ void bg_ffmpeg_codec_set_parameter(bg_ffmpeg_codec_context_t * ctx,
   }
 
 static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
-                                gavl_compression_info_t * ci,
-                                gavl_dictionary_t * m)
+                                gavl_dictionary_t * s,
+                                const ffmpeg_codec_info_t * info)
   {
-  if(ci)
-    {
-    /* Set up compression info */
+  gavl_compression_info_t ci;
+  gavl_compression_info_init(&ci);
   
-    if((ci->id = bg_codec_id_ffmpeg_2_gavl(ctx->codec->id)) == GAVL_CODEC_ID_NONE)
-      return 0;
+  /* Set up compression info */
+  
+  if((ci.id = bg_codec_id_ffmpeg_2_gavl(ctx->codec->id)) == GAVL_CODEC_ID_NONE)
+    return 0;
 
-    /* Extract extradata */
-
-    if(ctx->avctx->extradata_size)
-      gavl_buffer_append_data(&ci->codec_header, ctx->avctx->extradata, ctx->avctx->extradata_size);
+  /* Extract extradata */
+  
+  if(ctx->avctx->extradata_size)
+    gavl_buffer_append_data(&ci.codec_header, ctx->avctx->extradata, ctx->avctx->extradata_size);
+  
+  switch(ctx->avctx->codec_id)
+    {
+    case AV_CODEC_ID_MP2:
+    case AV_CODEC_ID_AC3:
+      ci.bitrate = ctx->avctx->bit_rate;
+      break;
+    default:
+      break;
     }
-  if(m)
-    gavl_dictionary_set_string(m, GAVL_META_SOFTWARE, LIBAVCODEC_IDENT);
+  if(ctx->avctx->codec_type == AVMEDIA_TYPE_AUDIO)
+    {
+    ci.pre_skip = ctx->avctx->delay;
+    }
+  else if(ctx->avctx->codec_type == AVMEDIA_TYPE_VIDEO)
+    {
+
+    if(!(info->flags & FLAG_INTRA_ONLY))
+      {
+      if((ctx->avctx->gop_size > 1) ||
+         (ctx->avctx->gop_size < 0))
+        {
+        ci.flags |= GAVL_COMPRESSION_HAS_P_FRAMES;
+        }
+      if((info->flags & FLAG_B_FRAMES) &&
+         ((ctx->avctx->max_b_frames > 0) || ctx->avctx->has_b_frames))
+        ci.flags |= GAVL_COMPRESSION_HAS_B_FRAMES |
+          GAVL_COMPRESSION_HAS_P_FRAMES;
+      }
+    }
+
+  gavl_stream_set_compression_info(s, &ci);
+  
+  gavl_compression_info_free(&ci);
+  gavl_dictionary_set_string(gavl_stream_get_metadata_nc(s), GAVL_META_SOFTWARE, LIBAVCODEC_IDENT);
   return 1;
   }
 
@@ -344,21 +377,20 @@ void bg_ffmpeg_set_audio_format_params(AVCodecParameters * avctx,
   }
 
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
-                                               gavl_compression_info_t * ci,
-                                               gavl_audio_format_t * fmt,
-                                               gavl_dictionary_t * m)
+                                               gavl_dictionary_t * s)
   {
   AVOutputFormat * ofmt;
   //  if(!find_encoder(ctx))
   //    return NULL;
+
+  gavl_audio_format_t * fmt = gavl_stream_get_audio_format_nc(s);
   
   /* Set format for codec */
 
   if(!ctx->codec)
     return NULL;
-
+  
   bg_ffmpeg_set_audio_format_avctx(ctx->avctx, fmt);
-
   
   ctx->avctx->channel_layout =
     bg_ffmpeg_get_channel_layout(fmt);
@@ -443,21 +475,8 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   /* Copy format for later use */
   gavl_audio_format_copy(&ctx->afmt, fmt);
 
-  set_compression_info(ctx, ci, m);
+  set_compression_info(ctx, s, NULL);
 
-  if(ci)
-    {
-    switch(ctx->avctx->codec_id)
-      {
-      case AV_CODEC_ID_MP2:
-      case AV_CODEC_ID_AC3:
-        ci->bitrate = ctx->avctx->bit_rate;
-        break;
-      default:
-        break;
-      }
-    ci->pre_skip = ctx->avctx->delay;
-    }
   
   ctx->in_pts = GAVL_TIME_UNDEFINED;
   ctx->out_pts = GAVL_TIME_UNDEFINED;
@@ -641,18 +660,18 @@ void bg_ffmpeg_set_video_dimensions_params(AVCodecParameters * avctx,
 
 
 gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
-                                               gavl_compression_info_t * ci,
-                                               gavl_video_format_t * fmt,
-                                               gavl_dictionary_t * m)
+                                               gavl_dictionary_t * s)
   {
   int do_convert = 0;
   const ffmpeg_codec_info_t * info;
   gavl_video_sink_get_func get_func = NULL;
   AVOutputFormat * ofmt;
-
+  gavl_video_format_t * fmt;
   //  if(!find_encoder(ctx))
   //    return NULL;
 
+  fmt = gavl_stream_get_video_format_nc(s);
+  
   if(!ctx->codec)
     return NULL;
   
@@ -760,24 +779,8 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
   ctx->vsink = gavl_video_sink_create(get_func, write_video_func, ctx, &ctx->vfmt);
   
   /* Set up compression info */
-  set_compression_info(ctx, ci, m);
-
-  if(ci)
-    {
-    if(!(info->flags & FLAG_INTRA_ONLY))
-      {
-      if((ctx->avctx->gop_size > 1) ||
-         (ctx->avctx->gop_size < 0))
-        {
-        ci->flags |= GAVL_COMPRESSION_HAS_P_FRAMES;
-        }
-      if((info->flags & FLAG_B_FRAMES) &&
-         ((ctx->avctx->max_b_frames > 0) || ctx->avctx->has_b_frames))
-        ci->flags |= GAVL_COMPRESSION_HAS_B_FRAMES |
-          GAVL_COMPRESSION_HAS_P_FRAMES;
-      }
-    }
-
+  set_compression_info(ctx, s, info);
+  
   ctx->frame->width  = ctx->vfmt.image_width;
   ctx->frame->height = ctx->vfmt.image_height;
  

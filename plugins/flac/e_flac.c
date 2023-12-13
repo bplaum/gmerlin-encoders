@@ -49,7 +49,6 @@ typedef struct
   
   char * filename;
 
-  gavl_audio_format_t format;
   
   /* Configuration stuff */
   int use_vorbis_comment;
@@ -79,7 +78,11 @@ typedef struct
   /* Generated seek table */
   FLAC__StreamMetadata_SeekPoint * seektable; 
   
-  gavl_compression_info_t ci;
+  //  gavl_compression_info_t ci;
+  // gavl_dictionary_t m_stream;
+  // gavl_audio_format_t format;
+
+  gavl_dictionary_t stream;
   
   int fixed_blocksize;
 
@@ -87,7 +90,6 @@ typedef struct
   gavl_packet_sink_t * psink_int;
   gavl_packet_sink_t * psink_ext;
   
-  gavl_dictionary_t m_stream;
   const gavl_dictionary_t * m_global;
 
   int write_seektable;
@@ -116,7 +118,7 @@ static int write_comment(flac_t * f, int last)
   int len;
 
   io = gavf_io_create_mem_write();
-  bg_vorbis_comment_write(io, &f->m_stream, f->m_global, 0);
+  bg_vorbis_comment_write(io, gavl_stream_get_metadata(&f->stream), f->m_global, 0);
   comment_ptr = gavf_io_mem_get_buf(io, &len);
   
   buf = malloc(4 + len);
@@ -412,9 +414,9 @@ static int add_audio_stream_flac(void * data,
   flac = data;
   
   /* Copy and adjust format */
-  
-  gavl_audio_format_copy(&flac->format, format);
-  gavl_dictionary_copy(&flac->m_stream, m);
+  gavl_init_audio_stream(&flac->stream);
+  gavl_audio_format_copy(gavl_stream_get_audio_format_nc(&flac->stream), format);
+  gavl_dictionary_copy(gavl_stream_get_metadata_nc(&flac->stream), m);
   
   return 0;
   }
@@ -466,14 +468,12 @@ static int start_flac(void * data)
 
   if(flac->compressed)
     {
-    if(!(flac->psink_ext = bg_flac_start_compressed(flac->enc, &flac->format, &flac->ci,
-                                                    &flac->m_stream)))
+    if(!(flac->psink_ext = bg_flac_start_compressed(flac->enc, &flac->stream)))
       return 0;
     }
   else
     {
-    if(!(flac->sink = bg_flac_start_uncompressed(flac->enc, &flac->format, &flac->ci,
-                                                 &flac->m_stream)))
+    if(!(flac->sink = bg_flac_start_uncompressed(flac->enc, &flac->stream)))
       return 0;
     }
   
@@ -626,7 +626,7 @@ static int close_flac(void * data, int do_delete)
     flac->sink = NULL;
     }
 
-  gavl_dictionary_reset(&flac->m_stream);
+  gavl_dictionary_reset(&flac->stream);
   
   return 1;
   }
@@ -666,9 +666,12 @@ add_audio_stream_compressed_flac(void * priv,
                                  const gavl_compression_info_t * info)
   {
   flac_t * flac = priv;
-  gavl_compression_info_copy(&flac->ci, info);
-  gavl_audio_format_copy(&flac->format, format);
-  gavl_dictionary_copy(&flac->m_stream, m);
+
+  gavl_init_audio_stream(&flac->stream);
+  gavl_stream_set_compression_info(&flac->stream, info);
+  gavl_audio_format_copy(gavl_stream_get_audio_format_nc(&flac->stream), format);
+  
+  gavl_dictionary_copy(gavl_stream_get_metadata_nc(&flac->stream), m);
   flac->compressed = 1;
   return 0;
   }

@@ -275,25 +275,26 @@ static const uint8_t comment_header[7] = { 0x81, 't', 'h', 'e', 'o', 'r', 'a' };
 
 static int init_compressed_theora(bg_ogg_stream_t * s)
   {
+  int ret = 0;
   ogg_packet packet;
-  
   int len;
-  
+  gavl_compression_info_t ci;
   theora_t * theora = s->codec_priv;
 
-  theora->format = &s->vfmt;
+  theora->format = gavl_stream_get_video_format_nc(&s->s);
   
   memset(&packet, 0, sizeof(packet));
-
+  
+  gavl_compression_info_init(&ci);
+  gavl_stream_get_compression_info(&s->s, &ci);
   /* Write ID packet */
 
-  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
-                                           0, &len);
-
+  packet.packet = gavl_extract_xiph_header(&ci.codec_header, 0, &len);
+  
   if(!packet.packet)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken theora header");
-    return 0;
+    goto fail;
     }
 
   packet.bytes  = len;
@@ -305,36 +306,45 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
     (packet.packet[41] & 0xe0) >> 5;
 
   if(!bg_ogg_stream_write_header_packet(s, &packet))
-    return 0;
+    goto fail;
   
   /* Build comment packet */
   
   bg_ogg_create_comment_packet(comment_header, 7,
-                               &s->m_stream, s->m_global, 1, &packet);
+                               gavl_stream_get_metadata_nc(&s->s),
+                               s->m_global, 1, &packet);
 
   if(!bg_ogg_stream_write_header_packet(s, &packet))
-    return 0;
-
+    goto fail;
+  
   bg_ogg_free_comment_packet(&packet);
   
   /* Codepages */
 
-  packet.packet = gavl_extract_xiph_header(&s->ci.codec_header,
+  packet.packet = gavl_extract_xiph_header(&ci.codec_header,
                                            2, &len);
   
   if(!packet.packet)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken vorbis header");
-    return 0;
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken theora header");
+    goto fail;
     }
   
   packet.bytes  = len;
   
   if(!bg_ogg_stream_write_header_packet(s, &packet))
-    return 0;
-
+    goto fail;
+  
   theora->frames_since_keyframe = -1;
-  return 1;
+  
+  ret = 1;
+
+  fail:
+
+  gavl_compression_info_free(&ci);
+
+  return ret;
+
   }
 
 static gavl_sink_status_t
@@ -441,20 +451,23 @@ write_video_frame_theora(void * data, gavl_video_frame_t * frame)
 
 
 static gavl_video_sink_t *
-init_theora(void * data, gavl_compression_info_t * ci,
-            gavl_video_format_t * format,
-            gavl_dictionary_t * stream_metadata)
+init_theora(void * data, gavl_dictionary_t * s)
   {
   int sub_h, sub_v;
   int arg_i1, arg_i2;
   uint8_t * ptr;
   ogg_packet op;
   int header_packets;
-  
   theora_t * theora = data;
+  gavl_compression_info_t ci;
+  gavl_dictionary_t * stream_metadata = gavl_stream_get_metadata_nc(s);
+  gavl_video_format_t * format = gavl_stream_get_video_format_nc(s);
 
   theora->format = format;
 
+  gavl_compression_info_init(&ci);
+  gavl_stream_get_compression_info(s, &ci);
+  
   bg_encoder_set_framerate(&theora->fr, format);
   
   /* Set video format */
@@ -547,15 +560,15 @@ init_theora(void * data, gavl_compression_info_t * ci,
   
   /* Encode initial packets */
 
-  ci->id = GAVL_CODEC_ID_THEORA;
-  ci->flags = GAVL_COMPRESSION_HAS_P_FRAMES;
+  ci.id = GAVL_CODEC_ID_THEORA;
+  ci.flags = GAVL_COMPRESSION_HAS_P_FRAMES;
   
   header_packets = 0;
 
   /* Build global header */
   while(th_encode_flushheader(theora->ts, &theora->tc, &op) > 0)
     {
-    gavl_append_xiph_header(&ci->codec_header,
+    gavl_append_xiph_header(&ci.codec_header,
                             op.packet, op.bytes);
     
     if(header_packets == 1)
@@ -589,6 +602,8 @@ init_theora(void * data, gavl_compression_info_t * ci,
   theora->buf[1].height = theora->format->frame_height / sub_v;
   theora->buf[2].width  = theora->format->frame_width  / sub_h;
   theora->buf[2].height = theora->format->frame_height / sub_v;
+  
+  gavl_compression_info_free(&ci);
   
   return gavl_video_sink_create(NULL, write_video_frame_theora, theora,
                                 theora->format);

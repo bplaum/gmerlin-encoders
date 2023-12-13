@@ -66,6 +66,7 @@ typedef struct
 
 static int init_compressed_flacogg(bg_ogg_stream_t * s)
   {
+  int ret = 0;
   ogg_packet op;
   int len;
   uint8_t * ptr;
@@ -79,26 +80,29 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
       0x01, 0x00, // Major, minor version
       0x00, 0x01, // Number of other header packets (Big Endian)
     };
+
+  gavl_compression_info_t ci;
+  gavl_compression_info_init(&ci);
+  gavl_stream_get_compression_info(&s->s, &ci);
   
   memset(&op, 0, sizeof(op));
   
   /* Not the last metadata packet */
-  s->ci.codec_header.buf[4] &= 0x7f;
+  ci.codec_header.buf[4] &= 0x7f;
 
-  op.packet = malloc(9 + s->ci.codec_header.len);
+  op.packet = malloc(9 + ci.codec_header.len);
   
   memcpy(op.packet, header_bytes, 9);
   
-  memcpy(op.packet+9, s->ci.codec_header.buf,
-         s->ci.codec_header.len);
+  memcpy(op.packet+9, ci.codec_header.buf,
+         ci.codec_header.len);
 
-  op.bytes  = s->ci.codec_header.len + 9;
+  op.bytes  = ci.codec_header.len + 9;
   
   if(!bg_ogg_stream_write_header_packet(s, &op))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,  "Got no Flac ID page");
-    free(op.packet);
-    return 0;
+    goto fail;
     }
   
   free(op.packet);
@@ -106,7 +110,7 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
   /* Vorbis comment */
   
   io = gavf_io_create_mem_write();
-  bg_vorbis_comment_write(io, &s->m_stream, s->m_global, 0);
+  bg_vorbis_comment_write(io, gavl_stream_get_metadata(&s->s), s->m_global, 0);
   comment_ptr = gavf_io_mem_get_buf(io, &len);
   
   op.packet = malloc(4 + len);
@@ -126,12 +130,17 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,  "Got no Flac ID page");
     free(op.packet);
-    return 0;
+    goto fail;
     }
+
+  ret = 1;
+
+  fail:
   
+  gavl_compression_info_free(&ci);
   free(op.packet);
   
-  return 1;
+  return ret;
   }
 
 static void * create_flacogg()
@@ -156,12 +165,10 @@ static void set_parameter_flacogg(void * data, const char * name,
   }
 
 static gavl_audio_sink_t *
-init_flacogg(void * data, gavl_compression_info_t * ci,
-             gavl_audio_format_t * format,
-             gavl_dictionary_t * stream_metadata)
+init_flacogg(void * data, gavl_dictionary_t * stream)
   {
   flacogg_t * flacogg = data;
-  return bg_flac_start_uncompressed(flacogg->enc, format, ci, stream_metadata);
+  return bg_flac_start_uncompressed(flacogg->enc, stream);
   }
 
 static void set_packet_sink(void * data, gavl_packet_sink_t * psink)

@@ -36,12 +36,14 @@
 typedef struct
   {
   bg_lame_t * com;
+  gavl_dictionary_t s;
+  
   bg_shout_t * shout;
-  gavl_audio_format_t fmt;
   gavl_packet_sink_t * psink;
   gavl_audio_sink_t * asink;
   int compressed;
-  gavl_compression_info_t ci;
+  gavl_audio_format_t * fmt;
+  
   } b_lame_t;
 
 static void * create_lame()
@@ -105,7 +107,7 @@ add_audio_stream_lame(void * data,
                       const gavl_audio_format_t * format)
   {
   b_lame_t * lame = data;
-  gavl_audio_format_copy(&lame->fmt, format);
+  gavl_audio_format_copy(lame->fmt, format);
   return 0;
   }
 
@@ -118,7 +120,7 @@ add_audio_stream_compressed_lame(void * data,
   b_lame_t * lame = data;
 
   add_audio_stream_lame(data, m, format);
-  gavl_compression_info_copy(&lame->ci, ci);
+  gavl_stream_set_compression_info(&lame->s, ci);
   lame->compressed = 1;
   return 0;
   }
@@ -149,7 +151,7 @@ static int start_lame(void * data)
                                         lame);
   if(!lame->compressed)
     {
-    lame->asink = bg_lame_open(lame->com, NULL, &lame->fmt, NULL);
+    lame->asink = bg_lame_open(lame->com, &lame->s);
     bg_lame_set_packet_sink(lame->com, lame->psink);
     }
   

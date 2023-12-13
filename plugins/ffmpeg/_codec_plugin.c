@@ -65,21 +65,17 @@ static void set_parameter(void * priv, const char * name,
 
 #ifdef IS_AUDIO
 static gavl_audio_sink_t * open_audio(void * priv,
-                                      gavl_compression_info_t * ci,
-                                      gavl_audio_format_t * fmt,
-                                      gavl_dictionary_t * m)
+                                      gavl_dictionary_t * s)
   {
   stream_codec_t * c = priv;
-  return bg_ffmpeg_codec_open_audio(c->codec, ci, fmt, m);
+  return bg_ffmpeg_codec_open_audio(c->codec, s);
   }
 #else
 static gavl_video_sink_t * open_video(void * priv,
-                                      gavl_compression_info_t * ci,
-                                      gavl_video_format_t * fmt,
-                                      gavl_dictionary_t * m)
+                                      gavl_dictionary_t * s)
   {
   stream_codec_t * c = priv;
-  return bg_ffmpeg_codec_open_video(c->codec, ci, fmt, m);
+  return bg_ffmpeg_codec_open_video(c->codec, s);
   }
 #endif
 

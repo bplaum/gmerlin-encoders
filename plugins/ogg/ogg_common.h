@@ -41,13 +41,8 @@ typedef struct
   void (*set_parameter)(void*, const char * name,
                         const gavl_value_t * v);
 
-  gavl_audio_sink_t * (*init_audio)(void*, gavl_compression_info_t * ci_ret,
-                                    gavl_audio_format_t * format,
-                                    gavl_dictionary_t * stream_metadata);
-
-  gavl_video_sink_t * (*init_video)(void*, gavl_compression_info_t * ci_ret,
-                                    gavl_video_format_t * format,
-                                    gavl_dictionary_t * stream_metadata);
+  gavl_audio_sink_t * (*init_audio)(void*, gavl_dictionary_t * s);
+  gavl_video_sink_t * (*init_video)(void*, gavl_dictionary_t * s);
 
   int (*init_audio_compressed)(bg_ogg_stream_t * s);
   int (*init_video_compressed)(bg_ogg_stream_t * s);
@@ -72,11 +67,15 @@ struct bg_ogg_stream_s
   
   const bg_ogg_codec_t * codec;
   void           * codec_priv;
+
+  /*
   gavl_audio_format_t afmt;
   gavl_video_format_t vfmt;
-  
   gavl_compression_info_t ci;
-
+  gavl_dictionary_t m_stream;
+  */
+  gavl_dictionary_t s;
+  
   gavl_audio_sink_t * asink;
   gavl_video_sink_t * vsink;
 
@@ -105,7 +104,6 @@ struct bg_ogg_stream_s
   /* Metadata */
 
   const gavl_dictionary_t * m_global;
-  gavl_dictionary_t m_stream;
 
   };
 

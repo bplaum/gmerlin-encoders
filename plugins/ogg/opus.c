@@ -415,20 +415,20 @@ write_audio_frame_opus(void * data, gavl_audio_frame_t * frame)
 
 
 static gavl_audio_sink_t *
-init_opus(void * data, gavl_compression_info_t * ci,
-          gavl_audio_format_t * format,
-          gavl_dictionary_t * stream_metadata)
+init_opus(void * data, gavl_dictionary_t * s)
   {
   int err;
   opus_t * opus = data;
-  //  uint8_t header[MAX_HEADER_LEN];
-  /* Setup header (also adjusts format) */
-
+  gavl_compression_info_t ci;
+  gavl_audio_format_t * format = gavl_stream_get_audio_format_nc(s);
+  
+  gavl_compression_info_init(&ci);
+  
   setup_header(&opus->h, format);
 
   format->samples_per_frame =
     (format->samplerate * opus->frame_size) / 10000;
-  
+
   /* Create encoder */
 
   opus->enc = opus_multistream_encoder_create(format->samplerate,
@@ -508,6 +508,7 @@ init_opus(void * data, gavl_compression_info_t * ci,
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "OPUS_GET_LOOKAHEAD failed: %s",
            opus_strerror(err));
+    gavl_compression_info_free(&ci);
     return 0; 
     }
 
@@ -519,21 +520,23 @@ init_opus(void * data, gavl_compression_info_t * ci,
   
   /* Output header */
 
-  header_to_packet(&opus->h, &ci->codec_header);
-  ci->id = GAVL_CODEC_ID_OPUS;
-  ci->pre_skip = opus->h.pre_skip;
+  header_to_packet(&opus->h, &ci.codec_header);
+  ci.id = GAVL_CODEC_ID_OPUS;
+  ci.pre_skip = opus->h.pre_skip;
 
-  opus->pts = -((int64_t)ci->pre_skip);
+  opus->pts = -((int64_t)ci.pre_skip);
   
-  
-  gavl_dictionary_set_string(stream_metadata, GAVL_META_SOFTWARE,
-                    opus_get_version_string());
+  gavl_dictionary_set_string(gavl_stream_get_metadata_nc(s), GAVL_META_SOFTWARE,
+                             opus_get_version_string());
   
   /* Allocate encoder buffer */
 
   // Size taken from opusenc.c
   opus->enc_buffer_size = opus->h.chtab.stream_count * (1275*3+7); 
   opus->enc_buffer = malloc(opus->enc_buffer_size);
+
+  gavl_stream_set_compression_info(s, &ci);
+  gavl_compression_info_free(&ci);
   
   return gavl_audio_sink_create(NULL, write_audio_frame_opus, opus,
                                 opus->format);
@@ -543,24 +546,29 @@ static int init_compressed_opus(bg_ogg_stream_t * s)
   {
   ogg_packet op;
   const char * vendor;
+  int ret = 0;
   //  opus_t * opus = data;
+  gavl_compression_info_t ci;
+  gavl_dictionary_t * m_stream = gavl_stream_get_metadata_nc(&s->s);
+  
+  gavl_compression_info_init(&ci);
   
   memset(&op, 0, sizeof(op));
-
-  op.packet = s->ci.codec_header.buf;
-  op.bytes = s->ci.codec_header.len;
+  
+  op.packet = ci.codec_header.buf;
+  op.bytes = ci.codec_header.len;
   
   /* And stream them out */
 
   if(!bg_ogg_stream_write_header_packet(s, &op))
     {
     gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Got no Opus header page");
-    return 0;
+    goto fail;
     }
   
   /* Build comment */
 
-  vendor = gavl_dictionary_get_string(&s->m_stream, GAVL_META_SOFTWARE);
+  vendor = gavl_dictionary_get_string(m_stream, GAVL_META_SOFTWARE);
 
   if(!vendor)
     {
@@ -570,18 +578,23 @@ static int init_compressed_opus(bg_ogg_stream_t * s)
     }
   
   bg_ogg_create_comment_packet((uint8_t*)"OpusTags", 8,
-                               &s->m_stream, s->m_global, 0, &op);
+                               m_stream, s->m_global, 0, &op);
   
   op.b_o_s = 0;
   op.e_o_s = 0;
   op.granulepos = 0;
   
   if(!bg_ogg_stream_write_header_packet(s, &op))
-    return 0;
+    goto fail;
   
   bg_ogg_free_comment_packet(&op);
+
+  ret = 1;
+  fail:
+
+  gavl_compression_info_free(&ci);
   
-  return 1;
+  return ret;
   }
 
 static int close_opus(void * data)

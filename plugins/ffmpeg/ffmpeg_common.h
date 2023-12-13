@@ -210,15 +210,10 @@ int bg_ffmpeg_codec_set_video_pass(bg_ffmpeg_codec_context_t * ctx,
 
 
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
-                                               gavl_compression_info_t * ci,
-                                               gavl_audio_format_t * fmt,
-                                               gavl_dictionary_t * m);
+                                               gavl_dictionary_t * s);
 
 gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
-                                               gavl_compression_info_t * ci,
-                                               gavl_video_format_t * fmt,
-                                               gavl_dictionary_t * m);
-
+                                               gavl_dictionary_t * s);
 
 void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx);
 
@@ -250,14 +245,16 @@ typedef struct
 
   AVDictionary * options;
   enum AVCodecID codec_id; // Set after initializaiton
-  gavl_dictionary_t m;
+  
+  gavl_dictionary_t s;
+  gavl_dictionary_t * m;
   } bg_ffmpeg_stream_common_t;
 
 typedef struct
   {
   bg_ffmpeg_stream_common_t com;
   gavl_audio_sink_t * sink;
-  gavl_audio_format_t format;
+  gavl_audio_format_t * format;
 
   } bg_ffmpeg_audio_stream_t;
 
@@ -265,7 +262,7 @@ typedef struct
   {
   bg_ffmpeg_stream_common_t com;
   gavl_video_sink_t * sink;
-  gavl_video_format_t format;
+  gavl_video_format_t * format;
   int64_t dts;
   } bg_ffmpeg_video_stream_t;
 

@@ -41,6 +41,8 @@ typedef struct
   {
   bg_lame_t * codec;
 
+  gavl_dictionary_t s;
+  
   char * filename;
   
   gavf_io_t * output;
@@ -62,7 +64,7 @@ typedef struct
   uint32_t xing_pos;
 
   int compressed;
-  gavl_audio_format_t fmt;
+  gavl_audio_format_t * fmt;
   } lame_priv_t;
 
 static void * create_lame()
@@ -168,7 +170,10 @@ static int open_io_lame(void * data, gavf_io_t * io,
   bg_id3v2_t * id3v2;
   lame = data;
   lame->output = io;
-    
+  
+  gavl_dictionary_reset(&lame->s);
+  gavl_init_audio_stream(&lame->s);
+  
   if(!gavf_io_can_seek(io))
     {
     if(lame->do_id3v1)
@@ -285,7 +290,7 @@ add_audio_stream_lame(void * data,
                       const gavl_audio_format_t * format)
   {
   lame_priv_t * lame = data;
-  gavl_audio_format_copy(&lame->fmt, format);
+  gavl_audio_format_copy(gavl_stream_get_audio_format_nc(&lame->s), format);
   return 0;
   }
 
@@ -321,10 +326,7 @@ static int start_lame(void * data)
 
   if(!lame->compressed)
     {
-    lame->asink = bg_lame_open(lame->codec,
-                               &lame->ci,
-                               &lame->fmt,
-                               NULL);
+    lame->asink = bg_lame_open(lame->codec, &lame->s);
 
     if((lame->ci.bitrate == GAVL_BITRATE_VBR) && (!gavf_io_can_seek(lame->output)))
       {

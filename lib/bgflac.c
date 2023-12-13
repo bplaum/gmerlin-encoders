@@ -325,16 +325,20 @@ write_audio_packet_func_flac(void * priv, gavl_packet_t * packet)
 
 gavl_packet_sink_t *
 bg_flac_start_compressed(bg_flac_t * flac,
-                         gavl_audio_format_t * fmt,
-                         gavl_compression_info_t * ci,
-                         gavl_dictionary_t * stream_metadata)
+                         gavl_dictionary_t * stream)
   {
   uint16_t i_tmp;
   uint8_t * ptr;
-  
-  flac->format = fmt;
-  gavl_compression_info_copy(&flac->ci, ci);
 
+  /*
+  gavl_audio_format_t * fmt,
+  gavl_compression_info_t * ci,
+  gavl_dictionary_t * stream_metadata
+  */
+  
+  flac->format = gavl_stream_get_audio_format_nc(stream);
+  gavl_stream_get_compression_info(stream, &flac->ci);
+  
   ptr = flac->ci.codec_header.buf
     + 8  // Signature + metadata header
     + 10 // min/max frame/blocksize
@@ -394,11 +398,9 @@ encode_audio_func(void * priv, gavl_audio_frame_t * frame)
 
 gavl_audio_sink_t *
 bg_flac_start_uncompressed(bg_flac_t * flac,
-                           gavl_audio_format_t * fmt,
-                           gavl_compression_info_t * ci,
-                           gavl_dictionary_t * stream_metadata)
+                           gavl_dictionary_t * stream)
   {
-  flac->format = fmt;
+  flac->format = gavl_stream_get_audio_format_nc(stream);
   
   /* Common initialization */
   flac->format->interleave_mode = GAVL_INTERLEAVE_NONE;
@@ -445,7 +447,7 @@ bg_flac_start_uncompressed(bg_flac_t * flac,
   /* Initialize */
 
   /* Set vendor string: Must be done early because it's needed in the streaminfo callback */
-  gavl_dictionary_set_string(stream_metadata, GAVL_META_SOFTWARE, FLAC__VENDOR_STRING);
+  gavl_dictionary_set_string(gavl_stream_get_metadata_nc(stream), GAVL_META_SOFTWARE, FLAC__VENDOR_STRING);
   
   flac->ci.id = GAVL_CODEC_ID_FLAC;
   
@@ -462,8 +464,8 @@ bg_flac_start_uncompressed(bg_flac_t * flac,
   
   //  flac->samples_per_block =
   //    FLAC__stream_encoder_get_blocksize(flac->enc);
-  
-  gavl_compression_info_copy(ci, &flac->ci);
+
+  gavl_stream_set_compression_info(stream, &flac->ci);
   return gavl_audio_sink_create(NULL, encode_audio_func, flac, flac->format);
   }
 

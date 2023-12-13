@@ -57,11 +57,9 @@ static void set_parameter(void * priv, const char * name,
   }
 
 static gavl_audio_sink_t * open_audio(void * priv,
-                                      gavl_compression_info_t * ci,
-                                      gavl_audio_format_t * fmt,
-                                      gavl_dictionary_t * m)
+                                      gavl_dictionary_t * s)
   {
-  return bg_lame_open(priv, ci, fmt, m);
+  return bg_lame_open(priv, s);
   }
 
 static void set_packet_sink(void * priv, gavl_packet_sink_t * s)

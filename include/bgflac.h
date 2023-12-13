@@ -37,14 +37,10 @@ const bg_parameter_info_t * bg_flac_get_parameters(void);
 void bg_flac_set_parameter(void * data, const char * name, const gavl_value_t * val);
 
 gavl_packet_sink_t *
-bg_flac_start_compressed(bg_flac_t * flac,
-                         gavl_audio_format_t * fmt, gavl_compression_info_t * ci,
-                         gavl_dictionary_t * stream_metadata);
+bg_flac_start_compressed(bg_flac_t * flac, gavl_dictionary_t * stream);
 
 gavl_audio_sink_t *
-bg_flac_start_uncompressed(bg_flac_t * flac,
-                           gavl_audio_format_t * fmt, gavl_compression_info_t * ci,
-                           gavl_dictionary_t * stream_metadata);
+bg_flac_start_uncompressed(bg_flac_t * flac, gavl_dictionary_t * stream);
 
 #if 0
 int bg_flac_start(bg_flac_t * flac,
