@@ -153,7 +153,7 @@ static void * create_b_ogg()
   ret->open_callback_data = bg_shout_create(SHOUT_FORMAT_OGG);
   ret->open_callback = open_callback;
 
-  ret->io_priv = gavf_io_create(NULL,
+  ret->io_priv = gavl_io_create(NULL,
                                 write_callback,
                                 NULL,
                                 close_callback,

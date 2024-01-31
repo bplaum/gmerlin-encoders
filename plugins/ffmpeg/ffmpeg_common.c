@@ -254,7 +254,7 @@ static char*ffmpeg_string(char*instr)
 }
 
 static int ffmpeg_open(void * data, const char * filename,
-                       gavf_io_t * io,
+                       gavl_io_t * io,
                        const gavl_dictionary_t * metadata)
   {
   const gavl_dictionary_t * cl;
@@ -301,7 +301,7 @@ static int ffmpeg_open(void * data, const char * filename,
   else if(io)
     {
     if(!(priv->format->flags & FLAG_PIPE) &&
-       !gavf_io_can_seek(io))
+       !gavl_io_can_seek(io))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "%s cannot be written to a pipe",
              priv->format->name);
@@ -335,7 +335,7 @@ int bg_ffmpeg_open(void * data, const char * filename,
   return ffmpeg_open(data, filename, NULL, metadata);
   }
 
-int bg_ffmpeg_open_io(void * data, gavf_io_t * io,
+int bg_ffmpeg_open_io(void * data, gavl_io_t * io,
                       const gavl_dictionary_t * metadata)
   {
   return ffmpeg_open(data, NULL, io, metadata);
@@ -773,12 +773,12 @@ static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
 
 static int io_write(void * opaque, uint8_t * buf, int size)
   {
-  return gavf_io_write_data(opaque, buf, size);
+  return gavl_io_write_data(opaque, buf, size);
   }
 
 static int64_t io_seek(void * opaque, int64_t off, int whence)
   {
-  return gavf_io_seek(opaque, off, whence);
+  return gavl_io_seek(opaque, off, whence);
   }
 
 int bg_ffmpeg_start(void * data)
@@ -827,7 +827,7 @@ int bg_ffmpeg_start(void * data)
                                        priv->io,
                                        NULL,
                                        io_write,
-                                       gavf_io_can_seek(priv->io) ? io_seek : NULL);
+                                       gavl_io_can_seek(priv->io) ? io_seek : NULL);
     }
   else if(avio_open(&priv->ctx->pb, priv->ctx->url, AVIO_FLAG_WRITE) < 0)
     return 0;

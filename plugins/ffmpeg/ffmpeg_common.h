@@ -299,7 +299,7 @@ struct ffmpeg_priv_s
   
   bg_encoder_callbacks_t * cb;
   
-  gavf_io_t * io;
+  gavl_io_t * io;
   unsigned char * io_buffer;
   };
 
@@ -322,7 +322,7 @@ void bg_ffmpeg_set_parameter(void * data, const char * name,
 int bg_ffmpeg_open(void * data, const char * filename,
                    const gavl_dictionary_t * metadata);
 
-int bg_ffmpeg_open_io(void * data, gavf_io_t * io,
+int bg_ffmpeg_open_io(void * data, gavl_io_t * io,
                       const gavl_dictionary_t * metadata);
 
 

@@ -67,7 +67,7 @@ static const char * get_vendor(const gavl_dictionary_t * m)
   return ret;
   }
 
-int bg_vorbis_comment_write(gavf_io_t * output,
+int bg_vorbis_comment_write(gavl_io_t * output,
                             const gavl_dictionary_t * m_stream,
                             const gavl_dictionary_t * m_global,
                             int framing)
@@ -86,7 +86,7 @@ int bg_vorbis_comment_write(gavf_io_t * output,
   
   /* Vendor string */
 
-  start_pos = gavf_io_position(output);
+  start_pos = gavl_io_position(output);
   
   str = get_vendor(m_stream);
   if(!str)
@@ -97,11 +97,11 @@ int bg_vorbis_comment_write(gavf_io_t * output,
 
   len1 = strlen(str);
 
-  gavf_io_write_32_le(output, len1);
-  gavf_io_write_data(output, (uint8_t*)str, len1);
+  gavl_io_write_32_le(output, len1);
+  gavl_io_write_data(output, (uint8_t*)str, len1);
   
-  num_tags_pos = gavf_io_position(output);
-  gavf_io_write_32_le(output, 0); // Filled in later
+  num_tags_pos = gavl_io_position(output);
+  gavl_io_write_32_le(output, 0); // Filled in later
   
   while(tags[i].gavl_name)
     {
@@ -117,10 +117,10 @@ int bg_vorbis_comment_write(gavf_io_t * output,
           len2 = strlen(str);
           len_total = len1 + 1 + len2;
 
-          gavf_io_write_32_le(output, len_total);
-          gavf_io_write_data(output, (uint8_t*)tags[i].vorbis_name, len1);
-          gavf_io_write_data(output, (uint8_t*)"=", 1);
-          gavf_io_write_data(output, (uint8_t*)str, len2);
+          gavl_io_write_32_le(output, len_total);
+          gavl_io_write_data(output, (uint8_t*)tags[i].vorbis_name, len1);
+          gavl_io_write_data(output, (uint8_t*)"=", 1);
+          gavl_io_write_data(output, (uint8_t*)str, len2);
       
           num_tags++;
           j++;
@@ -138,10 +138,10 @@ int bg_vorbis_comment_write(gavf_io_t * output,
           len2 = strlen(tmp_string);
           len_total = len1 + 1 + len2;
           
-          gavf_io_write_32_le(output, len_total);
-          gavf_io_write_data(output, (uint8_t*)tags[i].vorbis_name, len1);
-          gavf_io_write_data(output, (uint8_t*)"=", 1);
-          gavf_io_write_data(output, (uint8_t*)tmp_string, len2);
+          gavl_io_write_32_le(output, len_total);
+          gavl_io_write_data(output, (uint8_t*)tags[i].vorbis_name, len1);
+          gavl_io_write_data(output, (uint8_t*)"=", 1);
+          gavl_io_write_data(output, (uint8_t*)tmp_string, len2);
           free(tmp_string);
           num_tags++;
           }
@@ -162,10 +162,10 @@ int bg_vorbis_comment_write(gavf_io_t * output,
     len2 = strlen(str);
     
     len_total = len1 + len2;
-    gavf_io_write_32_le(output, len_total);
+    gavl_io_write_32_le(output, len_total);
 
-    gavf_io_write_data(output, (uint8_t*)"DATE=", 5);
-    gavf_io_write_data(output, (uint8_t*)str, len2);
+    gavl_io_write_data(output, (uint8_t*)"DATE=", 5);
+    gavl_io_write_data(output, (uint8_t*)str, len2);
     num_tags++;
     }
   else if((year = gavl_dictionary_get_year(m_global, GAVL_META_YEAR)) ||
@@ -180,23 +180,23 @@ int bg_vorbis_comment_write(gavf_io_t * output,
     
     len_total = len1 + len2;
 
-    gavf_io_write_32_le(output, len_total);
-    gavf_io_write_data(output, (uint8_t*)"DATE=", 5);
-    gavf_io_write_data(output, (uint8_t*)tmp_string, len2);
+    gavl_io_write_32_le(output, len_total);
+    gavl_io_write_data(output, (uint8_t*)"DATE=", 5);
+    gavl_io_write_data(output, (uint8_t*)tmp_string, len2);
 
     free(tmp_string);
     num_tags++;
     }
 
-  old_pos = gavf_io_position(output);
-  gavf_io_seek(output, num_tags_pos, SEEK_SET);
+  old_pos = gavl_io_position(output);
+  gavl_io_seek(output, num_tags_pos, SEEK_SET);
 
-  gavf_io_write_32_le(output, num_tags); // Filled in later
+  gavl_io_write_32_le(output, num_tags); // Filled in later
 
-  gavf_io_seek(output, old_pos, SEEK_SET);
+  gavl_io_seek(output, old_pos, SEEK_SET);
 
   if(framing)
-    gavf_io_write_8(output, 0x01);
+    gavl_io_write_8(output, 0x01);
   
-  return gavf_io_position(output) - start_pos;
+  return gavl_io_position(output) - start_pos;
   }

@@ -58,7 +58,7 @@ open_vorbis(void * data, const char * file,
   }
 
 static int
-open_io_vorbis(void * data, gavf_io_t * io,
+open_io_vorbis(void * data, gavl_io_t * io,
                const gavl_dictionary_t * metadata)
   {
   return bg_ogg_encoder_open(data, NULL, io, metadata,

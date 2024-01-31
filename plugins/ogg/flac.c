@@ -71,7 +71,7 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
   int len;
   uint8_t * ptr;
   uint8_t * comment_ptr;
-  gavf_io_t * io;
+  gavl_io_t * io;
   
   uint8_t header_bytes[] =
     {
@@ -109,9 +109,9 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
   
   /* Vorbis comment */
   
-  io = gavf_io_create_mem_write();
+  io = gavl_io_create_mem_write();
   bg_vorbis_comment_write(io, gavl_stream_get_metadata(&s->s), s->m_global, 0);
-  comment_ptr = gavf_io_mem_get_buf(io, &len);
+  comment_ptr = gavl_io_mem_get_buf(io, &len);
   
   op.packet = malloc(4 + len);
   ptr = op.packet;
@@ -124,7 +124,7 @@ static int init_compressed_flacogg(bg_ogg_stream_t * s)
   op.bytes = len + 4;
 
   free(comment_ptr);
-  gavf_io_destroy(io);
+  gavl_io_destroy(io);
   
   if(!bg_ogg_stream_write_header_packet(s, &op))
     {

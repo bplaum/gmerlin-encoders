@@ -42,7 +42,7 @@
 
 typedef struct
   {
-  gavf_io_t * output;
+  gavl_io_t * output;
 
   char * filename;
   
@@ -150,7 +150,7 @@ static void set_parameter_faac(void * data, const char * name,
     faac->id3v2_charset = atoi(v->v.str);
   }
 
-static int open_io_faac(void * data, gavf_io_t * io,
+static int open_io_faac(void * data, gavl_io_t * io,
                         const gavl_dictionary_t * metadata)
   {
   faac_t * faac;
@@ -159,7 +159,7 @@ static int open_io_faac(void * data, gavf_io_t * io,
   faac = data;
   faac->output = io;
 
-  if(!gavf_io_can_seek(io))
+  if(!gavl_io_can_seek(io))
     {
     if(faac->do_id3v1)
       {
@@ -187,13 +187,13 @@ static int open_io_faac(void * data, gavf_io_t * io,
 static int open_faac(void * data, const char * filename,
                      const gavl_dictionary_t * metadata)
   {
-  gavf_io_t * io;
+  gavl_io_t * io;
   faac_t * faac;
 
   faac = data;
   if(!strcmp(filename, "-"))
     {
-    io = gavf_io_create_file(stdout, 1, 0, 0);
+    io = gavl_io_create_file(stdout, 1, 0, 0);
     }
   else
     {
@@ -210,7 +210,7 @@ static int open_faac(void * data, const char * filename,
              filename, strerror(errno));
       return 0;
       }
-    io = gavf_io_create_file(f, 1, 1, 1);
+    io = gavl_io_create_file(f, 1, 1, 1);
     }
   return open_io_faac(data, io, metadata);
   }
@@ -218,7 +218,7 @@ static int open_faac(void * data, const char * filename,
 static gavl_sink_status_t write_packet(void * data, gavl_packet_t * p)
   {
   faac_t * faac = data;
-  if(gavf_io_write_data(faac->output, p->buf.buf, p->buf.len) < p->buf.len)
+  if(gavl_io_write_data(faac->output, p->buf.buf, p->buf.len) < p->buf.len)
     return GAVL_SINK_ERROR;
   return GAVL_SINK_OK;
   }
@@ -277,7 +277,7 @@ static int close_faac(void * data, int do_delete)
       faac->id3v1 = NULL;    
       }
     if(faac->output)
-      gavf_io_destroy(faac->output);
+      gavl_io_destroy(faac->output);
     faac->output = NULL;
     }
 

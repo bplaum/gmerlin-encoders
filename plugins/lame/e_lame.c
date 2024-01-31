@@ -45,7 +45,7 @@ typedef struct
   
   char * filename;
   
-  gavf_io_t * output;
+  gavl_io_t * output;
 
   int do_id3v1;
   int do_id3v2;
@@ -163,7 +163,7 @@ static void set_parameter_lame(void * data, const char * name,
     lame->id3v2_charset = atoi(v->v.str);
   }
 
-static int open_io_lame(void * data, gavf_io_t * io,
+static int open_io_lame(void * data, gavl_io_t * io,
                         const gavl_dictionary_t * metadata)
   {
   lame_priv_t * lame;
@@ -174,7 +174,7 @@ static int open_io_lame(void * data, gavf_io_t * io,
   gavl_dictionary_reset(&lame->s);
   gavl_init_audio_stream(&lame->s);
   
-  if(!gavf_io_can_seek(io))
+  if(!gavl_io_can_seek(io))
     {
     if(lame->do_id3v1)
       {
@@ -204,7 +204,7 @@ static int open_lame(void * data,
                      const gavl_dictionary_t * metadata)
   {
   lame_priv_t * lame;
-  gavf_io_t * io;
+  gavl_io_t * io;
   lame = data;
 
   //  bg_lame_open(&lame->com);
@@ -212,7 +212,7 @@ static int open_lame(void * data,
 
   if(!strcmp(filename, "-"))
     {
-    io = gavf_io_create_file(stdout, 1, 0, 0);
+    io = gavl_io_create_file(stdout, 1, 0, 0);
     }
   else
     {
@@ -229,7 +229,7 @@ static int open_lame(void * data,
              lame->filename, strerror(errno));
       return 0;
       }
-    io = gavf_io_create_file(f, 1, 1, 1);
+    io = gavl_io_create_file(f, 1, 1, 1);
     }
  
   return open_io_lame(data, io, metadata);
@@ -242,7 +242,7 @@ writes_compressed_audio_lame(void * data, const gavl_audio_format_t * format,
   if(ci->id != GAVL_CODEC_ID_MP3)
     return 0;
 #if 0  
-  if((ci->bitrate == GAVL_BITRATE_VBR) && (!gavf_io_can_seek(lame->output)))
+  if((ci->bitrate == GAVL_BITRATE_VBR) && (!gavl_io_can_seek(lame->output)))
     {
     gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "VBR mp3 cannot be written to streaming output");
     return 0;
@@ -262,7 +262,7 @@ write_audio_packet_func_lame(void * data, gavl_packet_t * p)
      !lame->xing)
     {
     lame->xing = bg_xing_create(p->buf.buf, p->buf.len);
-    lame->xing_pos = gavf_io_position(lame->output);
+    lame->xing_pos = gavl_io_position(lame->output);
     
     if(!bg_xing_write(lame->xing, lame->output))
       return GAVL_SINK_ERROR;
@@ -271,7 +271,7 @@ write_audio_packet_func_lame(void * data, gavl_packet_t * p)
   if(lame->xing)
     bg_xing_update(lame->xing, p->buf.len);
   
-  if(gavf_io_write_data(lame->output, p->buf.buf, p->buf.len) < p->buf.len)
+  if(gavl_io_write_data(lame->output, p->buf.buf, p->buf.len) < p->buf.len)
     return GAVL_SINK_ERROR;
   return GAVL_SINK_OK;
   }
@@ -328,7 +328,7 @@ static int start_lame(void * data)
     {
     lame->asink = bg_lame_open(lame->codec, &lame->s);
 
-    if((lame->ci.bitrate == GAVL_BITRATE_VBR) && (!gavf_io_can_seek(lame->output)))
+    if((lame->ci.bitrate == GAVL_BITRATE_VBR) && (!gavl_io_can_seek(lame->output)))
       {
       gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Won't write VBR mp3 to streaming output");
       return 0;
@@ -351,25 +351,25 @@ static int close_lame(void * data, int do_delete)
   /* Write xing tag */  
   if(lame->xing)
     {
-    uint64_t pos = gavf_io_position(lame->output);
-    gavf_io_seek(lame->output, lame->xing_pos, SEEK_SET);
+    uint64_t pos = gavl_io_position(lame->output);
+    gavl_io_seek(lame->output, lame->xing_pos, SEEK_SET);
     bg_xing_write(lame->xing, lame->output);
-    gavf_io_seek(lame->output, pos, SEEK_SET);
+    gavl_io_seek(lame->output, pos, SEEK_SET);
     }
   
   /* Write ID3V1 tag */
 
   if(lame->output)
     {
-    if(!gavf_io_can_seek(lame->output))
+    if(!gavl_io_can_seek(lame->output))
       {
-      gavf_io_flush(lame->output);
+      gavl_io_flush(lame->output);
       }
     else
       {
       if(ret && lame->id3v1)
         {
-        gavf_io_seek(lame->output, 0, SEEK_END);
+        gavl_io_seek(lame->output, 0, SEEK_END);
         if(!bgen_id3v1_write(lame->output, lame->id3v1))
           ret = 0;
         bgen_id3v1_destroy(lame->id3v1);
@@ -377,7 +377,7 @@ static int close_lame(void * data, int do_delete)
         }
       }
     /* 4. Close output file */
-    gavf_io_destroy(lame->output);
+    gavl_io_destroy(lame->output);
     lame->output = NULL;
     }
   /* Clean up */

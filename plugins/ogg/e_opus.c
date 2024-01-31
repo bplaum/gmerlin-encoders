@@ -59,7 +59,7 @@ open_opus(void * data, const char * file,
   }
 
 static int
-open_io_opus(void * data, gavf_io_t * io,
+open_io_opus(void * data, gavl_io_t * io,
              const gavl_dictionary_t * metadata)
   {
   return bg_ogg_encoder_open(data, NULL, io, metadata,

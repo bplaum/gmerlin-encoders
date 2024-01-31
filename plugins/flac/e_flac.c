@@ -94,14 +94,14 @@ typedef struct
 
   int write_seektable;
   
-  gavf_io_t * io;
+  gavl_io_t * io;
 
   int streaming;
   } flac_t;
 
 static int write_data(flac_t * f, const uint8_t * data, int len)
   {
-  if(gavf_io_write_data(f->io, data, len) < len)
+  if(gavl_io_write_data(f->io, data, len) < len)
     return 0;
   f->bytes_written += len;
   return 1;
@@ -113,13 +113,13 @@ static int write_comment(flac_t * f, int last)
   uint8_t * buf;
   uint8_t * ptr;
   uint8_t * comment_ptr;
-  gavf_io_t * io;
+  gavl_io_t * io;
   
   int len;
 
-  io = gavf_io_create_mem_write();
+  io = gavl_io_create_mem_write();
   bg_vorbis_comment_write(io, gavl_stream_get_metadata(&f->stream), f->m_global, 0);
-  comment_ptr = gavf_io_mem_get_buf(io, &len);
+  comment_ptr = gavl_io_mem_get_buf(io, &len);
   
   buf = malloc(4 + len);
   ptr = buf;
@@ -136,7 +136,7 @@ static int write_comment(flac_t * f, int last)
   write_data(f, buf, len+4);
   free(buf);
   free(comment_ptr);
-  gavf_io_destroy(io);
+  gavl_io_destroy(io);
   return ret;
   }
 
@@ -305,26 +305,26 @@ static int streaminfo_callback(void * data, uint8_t * si, int len)
       uint8_t * buf;
       int len;
 
-      gavf_io_t * io_mem = gavf_io_create_mem_write();
+      gavl_io_t * io_mem = gavl_io_create_mem_write();
       bg_flac_cover_tag_write(io_mem, flac->cover, 1);
-      buf = gavf_io_mem_get_buf(io_mem, &len);
+      buf = gavl_io_mem_get_buf(io_mem, &len);
       write_data(flac, buf, len);
       
       free(buf);
-      gavf_io_destroy(io_mem);
+      gavl_io_destroy(io_mem);
       }
     
     }
   else if(!flac->streaming)
     {
-    gavf_io_seek(flac->io, 0, SEEK_SET);
+    gavl_io_seek(flac->io, 0, SEEK_SET);
     if(!write_data(flac, si, len))
       return 0;
     }
   return 1;
   }
 
-static int open_io_flac(void * data, gavf_io_t * io,
+static int open_io_flac(void * data, gavl_io_t * io,
                         const gavl_dictionary_t * m)
   {
   int result = 1;
@@ -332,7 +332,7 @@ static int open_io_flac(void * data, gavf_io_t * io,
   flac->enc = bg_flac_create();
   flac->io = io;
 
-  if(!gavf_io_can_seek(flac->io))
+  if(!gavl_io_can_seek(flac->io))
     flac->streaming = 1;
   
   bg_flac_set_callbacks(flac->enc, streaminfo_callback, flac);
@@ -379,13 +379,13 @@ static int open_io_flac(void * data, gavf_io_t * io,
 static int open_flac(void * data, const char * filename,
                      const gavl_dictionary_t * m)
   {
-  gavf_io_t * io;
+  gavl_io_t * io;
   
   flac_t * flac = data;
 
   if(!strcmp(filename, "-"))
     {
-    io = gavf_io_create_file(stdout, 1, 0, 0);
+    io = gavl_io_create_file(stdout, 1, 0, 0);
     }
   else
     {
@@ -399,7 +399,7 @@ static int open_flac(void * data, const char * filename,
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Cannot open %s: %s",
              flac->filename, strerror(errno));
       }
-    io = gavf_io_create_file(out, 1, 1, 1);
+    io = gavl_io_create_file(out, 1, 1, 1);
     }
 
   return open_io_flac(data, io, m);
@@ -557,7 +557,7 @@ static void finalize(flac_t * flac)
       last = 1;
     
     build_seek_table(flac);
-    gavf_io_seek(flac->io, flac->seektable_start, SEEK_SET);
+    gavl_io_seek(flac->io, flac->seektable_start, SEEK_SET);
     write_seektable(flac->seektable,
                     flac->num_seektable_entries,
                     flac, last);
@@ -581,14 +581,14 @@ static int close_flac(void * data, int do_delete)
     {
     if(do_delete && flac->filename)
       {
-      gavf_io_destroy(flac->io);
+      gavl_io_destroy(flac->io);
       flac->io = NULL;
       remove(flac->filename);
       }
     else
       {
       finalize(flac);
-      gavf_io_destroy(flac->io);
+      gavl_io_destroy(flac->io);
       flac->io = NULL;
       }
     }

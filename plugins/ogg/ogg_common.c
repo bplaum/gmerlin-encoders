@@ -65,7 +65,7 @@ void bg_ogg_encoder_destroy(void * data)
     bg_ogg_encoder_close(e, 1);
 
   if(e->io_priv)
-    gavf_io_destroy(e->io_priv);
+    gavl_io_destroy(e->io_priv);
   
   if(e->audio_streams)
     {
@@ -100,7 +100,7 @@ void bg_ogg_encoder_set_callbacks(void * data, bg_encoder_callbacks_t * cb)
 
 int
 bg_ogg_encoder_open(void * data, const char * file,
-                    gavf_io_t * io,
+                    gavl_io_t * io,
                     const gavl_dictionary_t * metadata,
                     const char * ext)
   {
@@ -111,7 +111,7 @@ bg_ogg_encoder_open(void * data, const char * file,
     if(!strcmp(file, "-"))
       {
       /* stdout */
-      e->io_priv = gavf_io_create_file(stdout, 1, 0, 0);
+      e->io_priv = gavl_io_create_file(stdout, 1, 0, 0);
       }
     else
       {
@@ -128,7 +128,7 @@ bg_ogg_encoder_open(void * data, const char * file,
                file, strerror(errno));
         return 0;
         }
-      e->io_priv = gavf_io_create_file(f, 1, 1, 1);
+      e->io_priv = gavl_io_create_file(f, 1, 1, 1);
       }
     e->io = e->io_priv;
     }
@@ -161,9 +161,9 @@ static int bg_ogg_stream_flush_page(bg_ogg_stream_t * s, int force)
   
   if(result)
     {
-    if((gavf_io_write_data(s->enc->io,
+    if((gavl_io_write_data(s->enc->io,
                            og.header,og.header_len) < og.header_len) ||
-       (gavf_io_write_data(s->enc->io,
+       (gavl_io_write_data(s->enc->io,
                            og.body,og.body_len) < og.body_len))
       return -1;
     else
@@ -648,7 +648,7 @@ int bg_ogg_encoder_close(void * data, int do_delete)
     }
 
   if(e->io_priv)
-    gavf_io_destroy(e->io_priv);
+    gavl_io_destroy(e->io_priv);
   
   e->io_priv = NULL;
   e->io = NULL;
@@ -731,13 +731,13 @@ bg_ogg_create_comment_packet(const uint8_t * prefix,
                              int framing, ogg_packet * op)
   {
   int len;
-  gavf_io_t * io;
+  gavl_io_t * io;
   uint8_t * ptr;
   
-  io = gavf_io_create_mem_write();
+  io = gavl_io_create_mem_write();
   bg_vorbis_comment_write(io, m_stream, m_global, framing);
   
-  ptr = gavf_io_mem_get_buf(io, &len);
+  ptr = gavl_io_mem_get_buf(io, &len);
   
   /* Write mandatory fields */
   
@@ -753,7 +753,7 @@ bg_ogg_create_comment_packet(const uint8_t * prefix,
   gavl_hexdump(op->packet, op->bytes, 16);
   
   free(ptr);
-  gavf_io_destroy(io);
+  gavl_io_destroy(io);
   }
 
 void bg_ogg_free_comment_packet(ogg_packet * op)

@@ -20,7 +20,7 @@
  * *****************************************************************/
 
   
-int bg_vorbis_comment_write(gavf_io_t * output,
+int bg_vorbis_comment_write(gavl_io_t * output,
                             const gavl_dictionary_t * m_stream,
                             const gavl_dictionary_t * m_global,
                             int framing);
