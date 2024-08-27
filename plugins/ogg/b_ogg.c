@@ -1,9 +1,8 @@
 /*****************************************************************
  * gmerlin-encoders - encoder plugins for gmerlin
  *
- * Copyright (c) 2001 - 2012 Members of the Gmerlin project
- * gmerlin-general@lists.sourceforge.net
- * http://gmerlin.sourceforge.net
+ * Copyright (c) 2001 - 2024 Members of the Gmerlin project
+ * http://github.com/bplaum
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,6 +17,8 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
+
+
 
 #include <string.h>
 #include <stdlib.h>
@@ -158,7 +159,7 @@ static void * create_b_ogg()
                                 NULL,
                                 close_callback,
                                 NULL,
-                                GAVF_IO_CAN_WRITE,
+                                GAVL_IO_CAN_WRITE,
                                 ret->open_callback_data);
   return ret;
   }
