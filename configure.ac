@@ -58,7 +58,6 @@ dnl Theora
 dnl
 
 GMERLIN_CHECK_THEORAENC
-GMERLIN_CHECK_THEORADEC
 
 dnl
 dnl OPUS
@@ -95,13 +94,6 @@ dnl libavformat
 dnl
 
 GMERLIN_CHECK_AVFORMAT
-
-dnl
-dnl libshout
-dnl
-
-GMERLIN_CHECK_SHOUT
-
 
 dnl
 dnl Check if we have at least one video encoder

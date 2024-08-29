@@ -262,7 +262,7 @@ AC_ARG_ENABLE(vorbis,
 esac],[test_vorbis=true])
 
 if test x$test_vorbis = xtrue; then
-PKG_CHECK_MODULES(VORBIS, vorbisenc, have_vorbis="true", have_vorbis="false")
+PKG_CHECK_MODULES(VORBISENC, vorbisenc, have_vorbis="true", have_vorbis="false")
 fi
 
 AM_CONDITIONAL(HAVE_VORBIS, test x$have_vorbis = xtrue)
@@ -1091,6 +1091,9 @@ AC_ARG_ENABLE(lame,
    no)  test_lame=false ;;
 esac],[test_lame=true])
 
+AH_TEMPLATE([HAVE_LAME],
+            [Do we have lame installed?])
+
 if test x$test_lame = xtrue; then
 
 PKG_CHECK_MODULES(LAME, lame, have_lame="true", have_lame="false")
@@ -1529,43 +1532,6 @@ if test x$have_v4l2 = xtrue; then
 AC_DEFINE(HAVE_V4L2)
 fi
 
-
-])
-
-dnl
-dnl libshout
-dnl
-
-AC_DEFUN([GMERLIN_CHECK_SHOUT],[
-
-AH_TEMPLATE([HAVE_SHOUT],
-            [Do we have libshout installed?])
-
-have_shout="false"
-
-SHOUT_REQUIRED="2.2.2"
-
-AC_ARG_ENABLE(libshout,
-[AS_HELP_STRING([--disable-libshout],[Disable libshout (default: autodetect)])],
-[case "${enableval}" in
-   yes) test_shout=true ;;
-   no)  test_shout=false ;;
-esac],[test_shout=true])
-
-if test x$test_shout = xtrue; then
-
-PKG_CHECK_MODULES(SHOUT, shout >= $SHOUT_REQUIRED, have_shout="true", have_shout="false")
-fi
-
-AC_SUBST(SHOUT_REQUIRED)
-AC_SUBST(SHOUT_LIBS)
-AC_SUBST(SHOUT_CFLAGS)
-
-AM_CONDITIONAL(HAVE_SHOUT, test x$have_shout = xtrue)
-
-if test "x$have_shout" = "xtrue"; then
-AC_DEFINE([HAVE_SHOUT])
-fi
 
 ])
 

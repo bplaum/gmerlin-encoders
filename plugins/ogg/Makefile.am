@@ -8,12 +8,6 @@ if HAVE_THEORAENC
 theoraenc_plugins = c_theoraenc.la
 theora_sources = theora.c
 
-if HAVE_SHOUT
-shout_plugins = b_ogg.la
-bgshout_libs    = $(top_builddir)/lib/libbgshout.la @SHOUT_LIBS@
-else
-shout_plugins =
-endif
 
 else
 theoraenc_plugins =
@@ -49,18 +43,17 @@ c_vorbisenc.la \
 $(theoraenc_plugins) \
 $(opus_plugins) \
 $(flac_plugins) \
-$(shout_plugins) \
 $(oggvideo_plugins)
 
 AM_CFLAGS = -DLOCALE_DIR=\"$(localedir)\"
 
-e_vorbis_la_CFLAGS = @VORBIS_CFLAGS@ $(AM_CFLAGS)
+e_vorbis_la_CFLAGS = @VORBISENC_CFLAGS@ $(AM_CFLAGS)
 e_vorbis_la_SOURCES = e_vorbis.c vorbis.c ogg_common.c
-e_vorbis_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@ @VORBIS_LIBS@ 
+e_vorbis_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@
 
 e_oggvideo_la_CFLAGS = \
 @THEORAENC_CFLAGS@ \
-@VORBIS_CFLAGS@ \
+@VORBISENC_CFLAGS@ \
 @FLAC_CFLAGS@ \
 @OPUS_CFLAGS@ \
 $(AM_CFLAGS)
@@ -76,17 +69,9 @@ ogg_common.c
 e_oggvideo_la_LIBADD = \
 $(top_builddir)/lib/libgmerlin_encoders.la \
 @VORBISENC_LIBS@ \
-@VORBIS_LIBS@ \
 @THEORAENC_LIBS@ \
-@THEORADEC_LIBS@ \
 @OPUS_LIBS@ \
 $(bgflac_libs)
-
-
-b_ogg_la_CFLAGS = @THEORAENC_CFLAGS@ @THEORADEC_LIBS@ @VORBIS_CFLAGS@ @OPUS_CFLAGS@  $(AM_CFLAGS)
-b_ogg_la_SOURCES = b_ogg.c vorbis.c $(opus_sources) theora.c ogg_common.c
-b_ogg_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@ @VORBIS_LIBS@ @THEORAENC_LIBS@ @THEORADEC_LIBS@ @OPUS_LIBS@ $(bgshout_libs)
-
 
 e_opus_la_CFLAGS = @OPUS_CFLAGS@ $(AM_CFLAGS)
 e_opus_la_SOURCES = e_opus.c opus.c ogg_common.c
@@ -110,7 +95,7 @@ $(top_builddir)/lib/libgmerlin_encoders.la \
 @THEORADEC_LIBS@
 
 c_vorbisenc_la_CFLAGS = \
-@VORBIS_CFLAGS@ $(AM_CFLAGS)
+@VORBISENC_CFLAGS@ $(AM_CFLAGS)
 
 c_vorbisenc_la_SOURCES = \
 vorbis.c \
@@ -119,8 +104,7 @@ ogg_common.c
 
 c_vorbisenc_la_LIBADD = \
 $(top_builddir)/lib/libgmerlin_encoders.la \
-@VORBISENC_LIBS@ \
-@VORBIS_LIBS@ 
+@VORBISENC_LIBS@
 
 c_opusenc_la_CFLAGS = \
 @OPUS_CFLAGS@ $(AM_CFLAGS)
