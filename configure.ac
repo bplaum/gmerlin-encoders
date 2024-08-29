@@ -2,13 +2,14 @@ AC_INIT([gmerlin-encoders], [2.0.0])
 AC_CONFIG_SRCDIR([include/gmerlin_encoders.h])
 AM_INIT_AUTOMAKE
 
-AM_CONFIG_HEADER(include/config.h)
+AC_CONFIG_HEADERS(include/config.h)
 
 SAVE_CFLAGS=$CFLAGS
 SAVE_LDFLAGS=$LDFLAGS
 AC_DISABLE_STATIC
 AC_LANG(C)
-AC_PROG_LIBTOOL
+
+LT_INIT
 
 CFLAGS=$SAVE_CFLAGS
 
