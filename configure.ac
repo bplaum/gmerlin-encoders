@@ -204,16 +204,7 @@ else
 echo "Missing (Go to: http://ffmpeg.org/)"
 fi
 
-echo -n "libshout:     "
-if test "x$have_shout" = "xtrue"; then
-echo "Found (CFLAGS=$SHOUT_CFLAGS LIBS=$SHOUT_LIBS)"
-else
-echo "Missing (Go to: http://icecast.org/)"
-fi
-
-
 echo
-echo "If you installed a library but it was not detected, check the file INSTALL"
-echo "for troubleshooting tips. Also note that if the configure script reaches"
-echo "this point, all missing packages are optional so compilation should succeed"
-echo "anyway."
+echo "If the configure script reaches this point, all missing packages are "
+echo "optional so compilation should succeed anyway."
+echo
