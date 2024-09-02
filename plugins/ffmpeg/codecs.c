@@ -1580,7 +1580,7 @@ static gavl_channel_id_t chid_ffmpeg_2_gavl(uint64_t ffmpeg_id)
   }
 
 uint64_t
-bg_ffmpeg_get_channel_layout(gavl_audio_format_t * format)
+bg_ffmpeg_get_channel_mask(gavl_audio_format_t * format)
   {
   int i, idx;
   uint64_t mask = 1;

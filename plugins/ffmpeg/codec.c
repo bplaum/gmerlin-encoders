@@ -103,6 +103,7 @@ bg_ffmpeg_codec_context_t * bg_ffmpeg_codec_create(int type,
   
   ret->avctx->codec_type = type;
   ret->frame = av_frame_alloc();
+  ret->pkt = av_packet_alloc();
   
   return ret;
 
@@ -232,15 +233,13 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
 
 static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
   {
-  AVPacket pkt;
   AVFrame * f;
   int result;
 
-  av_init_packet(&pkt);
   gavl_packet_reset(&ctx->gp);
   
-  pkt.data = ctx->gp.buf.buf;
-  pkt.size = ctx->gp.buf.alloc;
+  ctx->pkt->data = ctx->gp.buf.buf;
+  ctx->pkt->size = ctx->gp.buf.alloc;
   
   if(ctx->aframe->valid_samples)
     {
@@ -264,14 +263,6 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     ctx->flags |= FLAG_ERROR;
     return -1;
     }
-
-#if 0
-  if(avcodec_encode_audio2(ctx->avctx, &pkt, f, &got_packet) < 0)
-    {
-    ctx->flags |= FLAG_ERROR;
-    return 0;
-    }
-#endif
   
   /* Mute frame */
   gavl_audio_frame_mute(ctx->aframe, &ctx->afmt);
@@ -279,8 +270,7 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
 
   while(1)
     {
-    av_init_packet(&pkt);
-    result = avcodec_receive_packet(ctx->avctx, &pkt);
+    result = avcodec_receive_packet(ctx->avctx, ctx->pkt);
 
     if((result == AVERROR(EAGAIN)) || (result == AVERROR_EOF))
       break;
@@ -305,16 +295,14 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     
     ctx->gp.flags |= GAVL_PACKET_KEYFRAME;
     
-    ctx->gp.buf.len = pkt.size;
-    ctx->gp.buf.buf = pkt.data;
+    ctx->gp.buf.len = ctx->pkt->size;
+    ctx->gp.buf.buf = ctx->pkt->data;
     
     // fprintf(stderr, "Put audio packet\n");
     // gavl_packet_dump(&ctx->gp);
     
     if(gavl_packet_sink_put_packet(ctx->psink, &ctx->gp) != GAVL_SINK_OK)
       ctx->flags |= FLAG_ERROR;
-    
-    av_packet_unref(&pkt);
     }
   return 1;
   }
@@ -356,31 +344,80 @@ write_audio_func(void * data, gavl_audio_frame_t * frame)
   return GAVL_SINK_OK;
   }
 
+static int try_channel_layout(const AVChannelLayout * ch_layout,
+                              const AVCodec * codec)
+  {
+  int i = 0;
 
-void bg_ffmpeg_set_audio_format_avctx(AVCodecContext * avctx,
-                                      const gavl_audio_format_t * fmt)
+  while(codec->ch_layouts[i].nb_channels)
+    {
+    if((codec->ch_layouts[i].nb_channels == ch_layout->nb_channels) &&
+       (codec->ch_layouts[i].order == AV_CHANNEL_ORDER_NATIVE) &&
+       (codec->ch_layouts[i].u.mask == ch_layout->u.mask))
+      return 1;
+    i++;
+    }
+  return 0;
+  }
+  
+
+int bg_ffmpeg_set_audio_format_avctx(AVCodecContext * ctx,
+                                     const AVCodec * codec,
+                                     gavl_audio_format_t * fmt)
   {
   /* Set format for codec */
-  avctx->sample_rate = fmt->samplerate;
+  ctx->sample_rate = fmt->samplerate;
   
-  /* Channel setup */
-  avctx->channels    = fmt->num_channels;
+  ctx->ch_layout.order       = AV_CHANNEL_ORDER_NATIVE;
+  ctx->ch_layout.nb_channels = fmt->num_channels;
+  ctx->ch_layout.u.mask      = bg_ffmpeg_get_channel_mask(fmt);
+
+  if(!try_channel_layout(&ctx->ch_layout, codec))
+    {
+    /* Try stereo */
+    fmt->num_channels = 2;
+    fmt->channel_locations[0] = GAVL_CHID_NONE;
+    gavl_set_channel_setup(fmt);
+    ctx->ch_layout.nb_channels = 2;
+    ctx->ch_layout.u.mask = AV_CH_LAYOUT_STEREO;
+    
+    if(!try_channel_layout(&ctx->ch_layout, codec))
+      {
+      /* Try mono */
+      fmt->num_channels = 1;
+      fmt->channel_locations[0] = GAVL_CHID_NONE;
+      gavl_set_channel_setup(fmt);
+
+      ctx->ch_layout.nb_channels = 1;
+      ctx->ch_layout.u.mask = AV_CH_LAYOUT_MONO;
+      
+      if(!try_channel_layout(&ctx->ch_layout, codec))
+        {
+        gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+                 "No suitable channel layout found");
+        return 0;
+        }
+      }
+    }
+  return 1;
   }
 
 void bg_ffmpeg_set_audio_format_params(AVCodecParameters * avctx,
-                                       const gavl_audio_format_t * fmt)
+                                       gavl_audio_format_t * fmt)
   {
   /* Set format for codec */
   avctx->sample_rate = fmt->samplerate;
   
   /* Channel setup */
-  avctx->channels    = fmt->num_channels;
+  avctx->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
+  avctx->ch_layout.nb_channels = fmt->num_channels;
+  avctx->ch_layout.u.mask = bg_ffmpeg_get_channel_mask(fmt);
   }
 
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
                                                gavl_dictionary_t * s)
   {
-  AVOutputFormat * ofmt;
+  const AVOutputFormat * ofmt;
   //  if(!find_encoder(ctx))
   //    return NULL;
 
@@ -391,11 +428,8 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   if(!ctx->codec)
     return NULL;
   
-  bg_ffmpeg_set_audio_format_avctx(ctx->avctx, fmt);
-  
-  ctx->avctx->channel_layout =
-    bg_ffmpeg_get_channel_layout(fmt);
-
+  if(!bg_ffmpeg_set_audio_format_avctx(ctx->avctx, ctx->codec, fmt))
+    return NULL;
   
   /* Sample format */
   ctx->avctx->sample_fmt = ctx->codec->sample_fmts[0];
@@ -505,7 +539,6 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
                        AVFrame * frame)
   {
   int result;
-  AVPacket pkt;
   
   if(avcodec_send_frame(ctx->avctx, frame) < 0)
     {
@@ -517,8 +550,7 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
   
   while(1)
     {
-    av_init_packet(&pkt);
-    result = avcodec_receive_packet(ctx->avctx, &pkt);
+    result = avcodec_receive_packet(ctx->avctx, ctx->pkt);
 
     if((result == AVERROR(EAGAIN)) || (result == AVERROR_EOF))
       break;
@@ -533,13 +565,13 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
 
     gavl_packet_reset(&ctx->gp);
 
-    ctx->gp.pts = pkt.pts;
+    ctx->gp.pts = ctx->pkt->pts;
 
-    if(pkt.flags & AV_PKT_FLAG_KEY)
+    if(ctx->pkt->flags & AV_PKT_FLAG_KEY)
       ctx->gp.flags |= GAVL_PACKET_KEYFRAME;
     
-    ctx->gp.buf.len = pkt.size;
-    ctx->gp.buf.buf = pkt.data;
+    ctx->gp.buf.len = ctx->pkt->size;
+    ctx->gp.buf.buf = ctx->pkt->data;
     
     if(ctx->vfmt.framerate_mode == GAVL_FRAMERATE_CONSTANT)
       ctx->gp.pts *= ctx->vfmt.frame_duration;
@@ -588,8 +620,6 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
       fprintf(ctx->stats_file, "%s", ctx->avctx->stats_out);
 
     ctx->gp.buf.buf = NULL;
-    
-    av_packet_unref(&pkt);
     }
   
   return 1;
@@ -666,7 +696,7 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
   int do_convert = 0;
   const ffmpeg_codec_info_t * info;
   gavl_video_sink_get_func get_func = NULL;
-  AVOutputFormat * ofmt;
+  const AVOutputFormat * ofmt;
   gavl_video_format_t * fmt;
   //  if(!find_encoder(ctx))
   //    return NULL;
@@ -848,8 +878,11 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
     av_freep(&ctx->frame->extended_data);
   
   if(ctx->frame)
-    free(ctx->frame);
+    av_frame_free(&ctx->frame);
 
+  if(ctx->pkt)
+    av_packet_free(&ctx->pkt);
+  
   if(ctx->stats_filename)
     free(ctx->stats_filename);
   

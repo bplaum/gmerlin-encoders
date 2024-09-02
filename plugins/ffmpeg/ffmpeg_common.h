@@ -119,7 +119,7 @@ typedef struct bg_ffmpeg_codec_context_s bg_ffmpeg_codec_context_t;
 
 struct bg_ffmpeg_codec_context_s
   {
-  AVCodec * codec;
+  const AVCodec * codec;
   
   AVCodecContext * avctx;
   
@@ -129,7 +129,8 @@ struct bg_ffmpeg_codec_context_s
   AVDictionary * options;
 
   gavl_packet_t gp;
-
+  AVPacket * pkt;
+  
   int type;
   
   /* Multipass stuff */
@@ -186,11 +187,12 @@ void bg_ffmpeg_set_video_dimensions_avctx(AVCodecContext * avctx,
 void bg_ffmpeg_set_video_dimensions_params(AVCodecParameters * avctx,
                                              const gavl_video_format_t * fmt);
 
-void bg_ffmpeg_set_audio_format_avctx(AVCodecContext * avctx,
-                                      const gavl_audio_format_t * fmt);
+int bg_ffmpeg_set_audio_format_avctx(AVCodecContext * avctx,
+                                     const AVCodec * codec,
+                                     gavl_audio_format_t * fmt);
 
 void bg_ffmpeg_set_audio_format_params(AVCodecParameters * avctx,
-                                       const gavl_audio_format_t * fmt);
+                                       gavl_audio_format_t * fmt);
 
 bg_ffmpeg_codec_context_t * bg_ffmpeg_codec_create(int type,
                                                    AVCodecParameters * avctx,
@@ -233,10 +235,9 @@ typedef struct ffmpeg_priv_s ffmpeg_priv_t;
 typedef struct
   {
   AVStream * stream;
-
-  bg_ffmpeg_codec_context_t * codec;
-  
   AVPacket * pkt;
+  
+  bg_ffmpeg_codec_context_t * codec;
   
   int flags;
   
@@ -271,6 +272,7 @@ typedef struct
   {
   bg_ffmpeg_stream_common_t com;
   AVRational time_base;
+  AVPacket * pkt;
   } bg_ffmpeg_text_stream_t;
 
 struct ffmpeg_priv_s
@@ -394,7 +396,7 @@ enum AVCodecID bg_codec_id_gavl_2_ffmpeg(gavl_codec_id_t gavl);
 gavl_codec_id_t bg_codec_id_ffmpeg_2_gavl(enum AVCodecID ffmpeg);
 
 uint64_t
-bg_ffmpeg_get_channel_layout(gavl_audio_format_t * format);
+bg_ffmpeg_get_channel_mask(gavl_audio_format_t * format);
 
 
 /* Compressed stream support */
