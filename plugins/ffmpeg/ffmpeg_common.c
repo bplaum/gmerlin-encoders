@@ -18,8 +18,6 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
-
-
 #include <stdlib.h>
 #include <string.h>
 
@@ -371,9 +369,8 @@ int bg_ffmpeg_add_audio_stream(void * data,
   init_stream(priv, &st->com);
   
   st->format = gavl_stream_get_audio_format_nc(&st->com.s);
+  gavl_audio_format_copy(st->format, format);
   
-  st->com.stream = avformat_new_stream(priv->ctx, NULL);
-
   bg_ffmpeg_set_audio_format_params(st->com.stream->codecpar, st->format);
   
   st->com.stream->codecpar->codec_type = AVMEDIA_TYPE_AUDIO;
@@ -407,9 +404,8 @@ int bg_ffmpeg_add_video_stream(void * data,
   init_stream(priv, &st->com);
   
   st->format = gavl_stream_get_video_format_nc(&st->com.s);
-  
   gavl_video_format_copy(st->format, format);
-
+  
   st->com.stream->codecpar->codec_type = AVMEDIA_TYPE_VIDEO;
 
   bg_ffmpeg_set_video_dimensions_params(st->com.stream->codecpar, format);

@@ -23,7 +23,7 @@
 #include <ogg/ogg.h>
 
 /* Generic struct for a codec. Here, we'll implement
-   encoders for vorbis, theora, speex and flac */
+   encoders for vorbis, theora and flac */
 
 typedef struct bg_ogg_encoder_s bg_ogg_encoder_t;
 typedef struct bg_ogg_stream_s bg_ogg_stream_t;

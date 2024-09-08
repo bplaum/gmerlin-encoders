@@ -187,14 +187,14 @@ echo -n "lame:         "
 if test "x$have_lame" = "xtrue"; then
 echo "Found (CFLAGS=$LAME_CFLAGS LIBS=$LAME_LIBS)"
 else
-echo "Missing (Go to: http://www.mp3dev.org/)"
+echo "Missing (Go to: https://lame.sourceforge.io)"
 fi
 
 echo -n "faac:         "
 if test "x$have_faac" = "xtrue"; then
 echo "Found (CFLAGS=$FAAC_CFLAGS LIBS=$FAAC_LIBS)"
 else
-echo "Missing (Go to: http://www.audiocoding.com/)"
+echo "Missing"
 fi
 
 echo -n "ffmpeg:       "

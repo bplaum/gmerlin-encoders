@@ -7,8 +7,6 @@ AM_LDFLAGS = @GMERLIN_PLUGIN_LDFLAGS@ -avoid-version -module
 if HAVE_THEORAENC
 theoraenc_plugins = c_theoraenc.la
 theora_sources = theora.c
-
-
 else
 theoraenc_plugins =
 theora_sources = 
@@ -91,8 +89,7 @@ ogg_common.c
 
 c_theoraenc_la_LIBADD = \
 $(top_builddir)/lib/libgmerlin_encoders.la \
-@THEORAENC_LIBS@ \
-@THEORADEC_LIBS@
+@THEORAENC_LIBS@
 
 c_vorbisenc_la_CFLAGS = \
 @VORBISENC_CFLAGS@ $(AM_CFLAGS)

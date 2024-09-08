@@ -31,7 +31,7 @@ AC_SUBST(GMERLIN_EXE_LDFLAGS)
 ])
 
 dnl
-dnl Check for theora decoder
+dnl Check for theora encoder
 dnl
 
 AC_DEFUN([GMERLIN_CHECK_THEORAENC],[
@@ -53,8 +53,7 @@ esac],[test_theoraenc=true])
 
 if test x$test_theoraenc = xtrue; then
 
-PKG_CHECK_MODULES(THEORADEC, theoradec, have_theoraenc="true", have_theoraenc="f
-alse")
+PKG_CHECK_MODULES(THEORAENC, theoraenc, have_theoraenc="true", have_theoraenc="false")
 fi
 
 AC_SUBST(THEORAENC_REQUIRED)

@@ -258,8 +258,7 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
   
   if(avcodec_send_frame(ctx->avctx, f) < 0)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-           "avcodec_send_frame failed");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "avcodec_send_frame failed");
     ctx->flags |= FLAG_ERROR;
     return -1;
     }
@@ -348,7 +347,10 @@ static int try_channel_layout(const AVChannelLayout * ch_layout,
                               const AVCodec * codec)
   {
   int i = 0;
-
+  
+  if(!codec->ch_layouts)
+    return 1; // Accept everything
+  
   while(codec->ch_layouts[i].nb_channels)
     {
     if((codec->ch_layouts[i].nb_channels == ch_layout->nb_channels) &&
@@ -367,6 +369,9 @@ int bg_ffmpeg_set_audio_format_avctx(AVCodecContext * ctx,
   {
   /* Set format for codec */
   ctx->sample_rate = fmt->samplerate;
+
+  ctx->time_base.den = fmt->samplerate;
+  ctx->time_base.num = 1;
   
   ctx->ch_layout.order       = AV_CHANNEL_ORDER_NATIVE;
   ctx->ch_layout.nb_channels = fmt->num_channels;

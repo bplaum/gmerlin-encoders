@@ -14,7 +14,6 @@ plugins/faac/c_faac.c
 plugins/faac/faac_codec.h
 plugins/faac/e_faac.c
 plugins/faac/faac_codec.c
-plugins/lame/b_lame.c
 plugins/lame/e_lame.c
 plugins/lame/xing.c
 plugins/lame/c_lame.c
@@ -34,7 +33,6 @@ plugins/ogg/c_vorbisenc.c
 plugins/ogg/e_oggvideo.c
 plugins/ogg/e_vorbis.c
 plugins/ogg/c_theoraenc.c
-plugins/ogg/b_ogg.c
 plugins/ogg/theora.c
 plugins/ogg/c_speexenc.c
 plugins/ffmpeg/e_ffmpeg.c
