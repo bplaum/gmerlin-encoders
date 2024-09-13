@@ -94,6 +94,7 @@
     .multi_names = (char const *[]){ "24", "48", "64", "96", "128", NULL } \
   },
 
+#if 0
 static const bg_parameter_info_t parameters_libfaac[] =
   {
     {
@@ -124,6 +125,7 @@ static const bg_parameter_info_t parameters_libfaac[] =
     },
     { /* */ }
   };
+#endif
 
 static const bg_parameter_info_t parameters_libvorbis[] =
   {
@@ -636,10 +638,11 @@ static const ffmpeg_codec_info_t audio_codecs[] =
       .parameters = parameters_mp3,
     },
     {
-      .name      = "libfaac",
-      .long_name = TRS("AAC"),
-      .id        = AV_CODEC_ID_AAC,
-      .parameters = parameters_libfaac,
+      .name       = "aac",
+      .long_name  = TRS("AAC"),
+      .id         = AV_CODEC_ID_AAC,
+      //      .parameters = parameters_libfaac,
+      //      .flags      = FLAG_EXTRADATA
     },
     {
       .name      = "libvorbis",

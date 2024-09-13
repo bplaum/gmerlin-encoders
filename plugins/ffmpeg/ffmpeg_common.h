@@ -35,11 +35,11 @@
 #define guess_format(a, b, c) av_guess_format(a, b, c)
 #endif
 
-
 #define FLAG_CONSTANT_FRAMERATE (1<<0)
 #define FLAG_INTRA_ONLY         (1<<1)
 #define FLAG_B_FRAMES           (1<<2)
 #define FLAG_PIPE               (1<<3) // Format can be written savely to pipes
+#define FLAG_EXTRADATA          (1<<4) // Encoder has extradata
 
 typedef struct
   {
@@ -158,6 +158,7 @@ struct bg_ffmpeg_codec_context_s
 
   /* Audio frame to encode */
   gavl_audio_frame_t * aframe;
+  int block_align;
   
   /*
    * Video frame to encode.

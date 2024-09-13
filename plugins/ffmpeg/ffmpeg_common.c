@@ -379,7 +379,6 @@ int bg_ffmpeg_add_audio_stream(void * data,
   lang = gavl_dictionary_get_string(m, GAVL_META_LANGUAGE);
   if(lang)
     av_dict_set(&st->com.stream->metadata, "language", lang, 0);
-
   
   priv->num_audio_streams++;
   return priv->num_audio_streams-1;
@@ -709,6 +708,8 @@ static int open_audio_encoder(bg_ffmpeg_audio_stream_t * st)
   if(!st->sink)
     return 0;
 
+  gavl_stream_get_compression_info(&st->com.s, &st->com.ci);
+  
   copy_extradata(st->com.stream->codecpar, &st->com.ci);
   st->com.stream->codecpar->codec_id = st->com.codec->id;
   
@@ -749,6 +750,8 @@ static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
   st->sink = bg_ffmpeg_codec_open_video(st->com.codec, &st->com.s);
   if(!st->sink)
     return 0;
+
+  gavl_stream_get_compression_info(&st->com.s, &st->com.ci);
   
   copy_extradata(st->com.stream->codecpar, &st->com.ci);
   st->com.stream->codecpar->codec_id = st->com.codec->id;

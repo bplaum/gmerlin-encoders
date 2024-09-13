@@ -30,6 +30,7 @@
 #define LOG_DOMAIN "ffmpeg_encoder"
 
 #include <gavl/metatags.h>
+#include <libavutil/opt.h>
 
 /*
  *  Standalone codecs
@@ -43,6 +44,21 @@
 static void 
 get_pixelformat_converter(bg_ffmpeg_codec_context_t * ctx, enum AVPixelFormat fmt,
                           int do_convert);
+
+#if 0
+static void dump_options(AVCodecContext * avctx)
+  {
+  const AVOption * opt = 0;
+
+  fprintf(stderr, "Codec options\n");
+
+  while((opt = av_opt_next(avctx, opt)))
+    {
+    fprintf(stderr, "  Name: %s\n", opt->name);
+    }
+  
+  }
+#endif
 
 static int find_encoder(bg_ffmpeg_codec_context_t * ctx)
   {
@@ -186,7 +202,10 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
   /* Extract extradata */
   
   if(ctx->avctx->extradata_size)
+    {
     gavl_buffer_append_data(&ci.codec_header, ctx->avctx->extradata, ctx->avctx->extradata_size);
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Got extradata: %d bytes", ctx->avctx->extradata_size);
+    }
   
   switch(ctx->avctx->codec_id)
     {
@@ -256,11 +275,17 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
       return 0;
     }
   
-  if(avcodec_send_frame(ctx->avctx, f) < 0)
+  if((result = avcodec_send_frame(ctx->avctx, f)) < 0)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "avcodec_send_frame failed");
-    ctx->flags |= FLAG_ERROR;
-    return -1;
+    char str[AV_ERROR_MAX_STRING_SIZE];
+
+    if(result != AVERROR_EOF)
+      {
+      av_strerror(result, str, AV_ERROR_MAX_STRING_SIZE);
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "avcodec_send_frame failed: %s", str);
+      ctx->flags |= FLAG_ERROR;
+      return -1;
+      }
     }
   
   /* Mute frame */
@@ -271,8 +296,11 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     {
     result = avcodec_receive_packet(ctx->avctx, ctx->pkt);
 
-    if((result == AVERROR(EAGAIN)) || (result == AVERROR_EOF))
+    if(result == AVERROR(EAGAIN))
       break;
+
+    if(result == AVERROR_EOF)
+      return 0;
     
     else if(result)
       {
@@ -343,6 +371,15 @@ write_audio_func(void * data, gavl_audio_frame_t * frame)
   return GAVL_SINK_OK;
   }
 
+#if 0
+static gavl_audio_frame_t *
+get_audio_frame_func(void * data)
+  {
+  bg_ffmpeg_codec_context_t * ctx = data;
+  return ctx->aframe;
+  }
+#endif
+
 static int try_channel_layout(const AVChannelLayout * ch_layout,
                               const AVCodec * codec)
   {
@@ -361,7 +398,6 @@ static int try_channel_layout(const AVChannelLayout * ch_layout,
     }
   return 0;
   }
-  
 
 int bg_ffmpeg_set_audio_format_avctx(AVCodecContext * ctx,
                                      const AVCodec * codec,
@@ -422,7 +458,7 @@ void bg_ffmpeg_set_audio_format_params(AVCodecParameters * avctx,
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
                                                gavl_dictionary_t * s)
   {
-  const AVOutputFormat * ofmt;
+  //  const AVOutputFormat * ofmt;
   //  if(!find_encoder(ctx))
   //    return NULL;
 
@@ -466,9 +502,11 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
     }
 
   /* Decide whether we need a global header */
+#if 0
   if(!ctx->format ||
      ((ofmt = guess_format(ctx->format->short_name, NULL, NULL)) &&
       (ofmt->flags & AVFMT_GLOBALHEADER)))
+#endif
     ctx->avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
   
   /* Open encoder */
@@ -478,32 +516,65 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
     return NULL;
     }
 
+  //  dump_options(ctx->avctx);
+  
   if(ctx->avctx->frame_size <= 1)
     fmt->samples_per_frame = 1024; // Frame size for uncompressed codecs
   else
     fmt->samples_per_frame = ctx->avctx->frame_size;
   
-  ctx->aframe = gavl_audio_frame_create(fmt);
+  ctx->aframe = gavl_audio_frame_create(NULL);
 
-  /* Set up AVFrame */
+  /* Allocate AVFrame */
   if(fmt->interleave_mode == GAVL_INTERLEAVE_ALL)
     {
     ctx->frame->extended_data = ctx->frame->data;
-    ctx->frame->linesize[0] = ctx->aframe->channel_stride * fmt->num_channels;
-    ctx->frame->extended_data[0] = ctx->aframe->samples.u_8;
+    ctx->frame->linesize[0] = gavl_bytes_per_sample(fmt->sample_format) * fmt->samples_per_frame
+      * fmt->num_channels;
+    
+    ctx->frame->buf[0] = av_buffer_alloc(ctx->frame->linesize[0]);
+    ctx->frame->data[0] = ctx->frame->buf[0]->data;
+    ctx->aframe->samples.u_8 = ctx->frame->extended_data[0];
     }
   else
     {
     int i;
+    
+    ctx->frame->linesize[0] = gavl_bytes_per_sample(fmt->sample_format) * fmt->samples_per_frame;
+    
     if(fmt->num_channels > AV_NUM_DATA_POINTERS)
+      {
       ctx->frame->extended_data = av_mallocz(fmt->num_channels *
                                              sizeof(*ctx->frame->extended_data));
+
+      ctx->frame->extended_buf = av_mallocz((fmt->num_channels-AV_NUM_DATA_POINTERS)*
+                                            sizeof(*ctx->frame->extended_buf));
+
+      for(i = 0; i < AV_NUM_DATA_POINTERS; i++)
+        {
+        ctx->frame->buf[i] = av_buffer_alloc(ctx->frame->linesize[0]);
+        ctx->frame->extended_data[i] = ctx->frame->buf[i]->data;
+        }
+      for(i = 0; i < fmt->num_channels - AV_NUM_DATA_POINTERS; i++)
+        {
+        ctx->frame->extended_buf[i] = av_buffer_alloc(ctx->frame->linesize[0]);
+        ctx->frame->extended_data[i + AV_NUM_DATA_POINTERS] = ctx->frame->extended_buf[i]->data;
+        }
+      ctx->frame->nb_extended_buf = fmt->num_channels - AV_NUM_DATA_POINTERS;
+      }
     else
+      {
       ctx->frame->extended_data = ctx->frame->data;
+
+      for(i = 0; i < fmt->num_channels; i++)
+        {
+        ctx->frame->buf[i] = av_buffer_alloc(ctx->frame->linesize[0]);
+        ctx->frame->extended_data[i] = ctx->frame->buf[i]->data;
+        }
+      }
     
     for(i = 0; i < fmt->num_channels; i++)
-      ctx->frame->extended_data[i] = ctx->aframe->channels.u_8[i];
-    ctx->frame->linesize[0] = ctx->aframe->channel_stride;
+      ctx->aframe->channels.u_8[i] = ctx->frame->extended_data[i];
     }
   
   /* Mute frame */
@@ -545,12 +616,15 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
   {
   int result;
   
-  if(avcodec_send_frame(ctx->avctx, frame) < 0)
+  if((result = avcodec_send_frame(ctx->avctx, frame)) < 0)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
-           "avcodec_send_frame failed");
-    ctx->flags |= FLAG_ERROR;
-    return 0;
+    if(result != AVERROR_EOF)
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
+               "avcodec_send_frame failed");
+      ctx->flags |= FLAG_ERROR;
+      return 0;
+      }
     }
   
   while(1)
@@ -870,7 +944,11 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
     bg_encoder_pts_cache_destroy(ctx->pc);
   
   if(ctx->aframe)
+    {
+    gavl_audio_frame_null(ctx->aframe);
     gavl_audio_frame_destroy(ctx->aframe);
+    }
+  
   if(ctx->vframe)
     gavl_video_frame_destroy(ctx->vframe);
   
@@ -884,7 +962,7 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
   
   if(ctx->frame)
     av_frame_free(&ctx->frame);
-
+  
   if(ctx->pkt)
     av_packet_free(&ctx->pkt);
   

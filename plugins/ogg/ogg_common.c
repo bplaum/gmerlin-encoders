@@ -750,8 +750,8 @@ bg_ogg_create_comment_packet(const uint8_t * prefix,
 
   memcpy(op->packet + prefix_len, ptr, len);
 
-  fprintf(stderr, "Built comment packet:\n");
-  gavl_hexdump(op->packet, op->bytes, 16);
+  //  fprintf(stderr, "Built comment packet:\n");
+  //  gavl_hexdump(op->packet, op->bytes, 16);
   
   free(ptr);
   gavl_io_destroy(io);
