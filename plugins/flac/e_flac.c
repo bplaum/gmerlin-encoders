@@ -688,7 +688,7 @@ const bg_encoder_plugin_t the_plugin =
     {
       BG_LOCALE,
       .name =            "e_flac",       /* Unique short name */
-      .long_name =       TRS("Flac encoder"),
+      .long_name =       TRS("Flac"),
       .description =     TRS("Encoder for flac files. Based on libflac (http://flac.sourceforge.net)"),
       .type =            BG_PLUGIN_ENCODER_AUDIO,
       .flags =           BG_PLUGIN_FILE,

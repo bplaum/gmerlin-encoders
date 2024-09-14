@@ -504,7 +504,7 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   /* Decide whether we need a global header */
 #if 0
   if(!ctx->format ||
-     ((ofmt = guess_format(ctx->format->short_name, NULL, NULL)) &&
+     ((ofmt = bg_ffmpeg_guess_format(ctx->format)) &&
       (ofmt->flags & AVFMT_GLOBALHEADER)))
 #endif
     ctx->avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
@@ -768,7 +768,6 @@ void bg_ffmpeg_set_video_dimensions_params(AVCodecParameters * avctx,
   avctx->sample_aspect_ratio.den = fmt->pixel_height;
   }
 
-
 gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
                                                gavl_dictionary_t * s)
   {
@@ -861,7 +860,7 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
   
   /* Decide whether we need a global header */
   if(!ctx->format ||
-     ((ofmt = guess_format(ctx->format->short_name, NULL, NULL)) &&
+     ((ofmt = bg_ffmpeg_guess_format(ctx->format)) &&
       (ofmt->flags & AVFMT_GLOBALHEADER)))
     ctx->avctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
   

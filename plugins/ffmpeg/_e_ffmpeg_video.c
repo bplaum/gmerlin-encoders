@@ -25,33 +25,37 @@
 
 #include "ffmpeg_common.h"
 
-
-static const ffmpeg_format_info_t formats[] =
-  {
+#ifdef FORMAT_MPEG1VIDEO
+#define NAME "mpeg1video"
+static const ffmpeg_format_info_t format =
     {
-      .name =       "MPEG-1 video",
-      .short_name = "mpeg1video",
+      .label =     "MPEG-1 video",
+      .name = NAME,
       .extension =  "m1v",
       .max_video_streams = 1,
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG1VIDEO,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
+    };
+#endif
+
+#ifdef FORMAT_MPEG2VIDEO
+#define NAME "mpeg2video"
+static const ffmpeg_format_info_t format =
     {
-      .name =       "MPEG-2 video",
-      .short_name = "mpeg2video",
+      .label =       "MPEG-2 video",
+      .name = NAME,
       .extension =  "m2v",
       .max_video_streams = 1,
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG2VIDEO,
                                          AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
-    { /* End of formats */ }
-  };
+    };
+#endif
 
 static void * create_ffmpeg()
   {
-  return bg_ffmpeg_create(formats);
+  return bg_ffmpeg_create(&format);
   }
 
 const bg_encoder_plugin_t the_plugin =
@@ -59,10 +63,9 @@ const bg_encoder_plugin_t the_plugin =
     .common =
     {
       BG_LOCALE,
-      .name =           "e_ffmpeg_video",       /* Unique short name */
-      .long_name =      TRS("FFmpeg video encoder"),
-      .description =    TRS("Plugin for encoding various video formats with ffmpeg \
-(http://www.ffmpeg.org)."),
+      .name =           "e_" NAME,       /* Unique short name */
+      .long_name =      format.label,
+      .description =    TRS("Based on ffmpeg (http://www.ffmpeg.org)"),
       .type =           BG_PLUGIN_ENCODER_VIDEO,
       .flags =          BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =       5,

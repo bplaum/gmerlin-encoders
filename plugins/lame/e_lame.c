@@ -404,8 +404,8 @@ const bg_encoder_plugin_t the_plugin =
     .common =
     {
       BG_LOCALE,
-      .name =            "e_lame",       /* Unique short name */
-      .long_name =       TRS("Lame mp3 encoder"),
+      .name =            "e_mp3",       /* Unique short name */
+      .long_name =       TRS("MP3"),
       .description =     TRS("Encoder for mp3 files. Based on lame (http://www.mp3dev.org). Supports CBR, ABR and VBR as well as ID3V1 and ID3V2 tags."),
       .type =            BG_PLUGIN_ENCODER_AUDIO,
       .flags =           BG_PLUGIN_FILE | BG_PLUGIN_PIPE | BG_PLUGIN_GAVF_IO,

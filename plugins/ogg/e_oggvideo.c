@@ -38,15 +38,7 @@
 extern const bg_ogg_codec_t bg_theora_codec;
 #endif
 
-#ifdef HAVE_SCHROEDINGER
-extern const bg_ogg_codec_t bg_schroedinger_codec;
-#endif
-
 extern const bg_ogg_codec_t bg_vorbis_codec;
-
-#ifdef HAVE_SPEEX
-extern const bg_ogg_codec_t bg_speex_codec;
-#endif
 
 #ifdef HAVE_FLAC
 extern const bg_ogg_codec_t bg_flacogg_codec;
@@ -59,9 +51,6 @@ extern const bg_ogg_codec_t bg_opus_codec;
 static bg_ogg_codec_t const * const audio_codecs[] =
   {
     &bg_vorbis_codec,
-#ifdef HAVE_SPEEX
-    &bg_speex_codec,
-#endif
 #ifdef HAVE_FLAC
     &bg_flacogg_codec,
 #endif
@@ -75,9 +64,6 @@ static bg_ogg_codec_t const * const video_codecs[] =
   {
 #ifdef HAVE_THEORAENC
     &bg_theora_codec,
-#endif
-#ifdef HAVE_SCHROEDINGER
-    &bg_schroedinger_codec,
 #endif
     NULL,
   };
@@ -282,8 +268,8 @@ const bg_encoder_plugin_t the_plugin =
     {
       BG_LOCALE,
       .name =            "e_oggvideo",       /* Unique short name */
-      .long_name =       TRS("Ogg A/V encoder"),
-      .description =     TRS("Generic encoder for Ogg A/V files."),
+      .long_name =       TRS("OGG Video"),
+      .description =     TRS("Encoder for Ogg A/V files."),
       .type =            BG_PLUGIN_ENCODER,
       .flags =           BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =        5,

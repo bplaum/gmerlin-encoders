@@ -24,30 +24,41 @@
 #include <gmerlin/translation.h>
 #include "ffmpeg_common.h"
 
-static const ffmpeg_format_info_t formats[] =
+#ifdef FORMAT_AU
+#define NAME "au"
+static const ffmpeg_format_info_t format =
   {
-    {
-      .name = "SUN AU Format",
-      .short_name = "au",
-      .extension =  "au",
-      .max_audio_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_PCM_MULAW,
-                                          AV_CODEC_ID_PCM_S16BE,
-                                          AV_CODEC_ID_PCM_ALAW,
-                                          AV_CODEC_ID_NONE },
-    },
-    {
-      .name = "Raw AC3",
-      .short_name = "ac3",
-      .extension =  "ac3",
-      .max_audio_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AC3,
-                                           AV_CODEC_ID_NONE },
-      .flags = FLAG_PIPE,
-    },
-    {
-      .name =       "AIFF",
-      .short_name = "aiff",
+    .label = "SUN AU Format",
+    .name = "au",
+    .extension =  "au",
+    .max_audio_streams = 1,
+    .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_PCM_MULAW,
+                                        AV_CODEC_ID_PCM_S16BE,
+                                        AV_CODEC_ID_PCM_ALAW,
+                                        AV_CODEC_ID_NONE },
+  };
+#endif
+
+#ifdef FORMAT_AC3
+#define NAME "ac3"
+static const ffmpeg_format_info_t format =
+  {
+    .label= "Raw AC3",
+    .name = "ac3",
+    .extension =  "ac3",
+    .max_audio_streams = 1,
+    .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AC3,
+                                         AV_CODEC_ID_NONE },
+    .flags = FLAG_PIPE,
+  };
+#endif
+
+#ifdef FORMAT_AIFF
+#define NAME "aiff"
+static const ffmpeg_format_info_t format =
+  {
+      .label=       "AIFF",
+      .name =       "aiff",
       .extension =  "aif",
       .max_audio_streams = 1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_PCM_S16BE,
@@ -55,44 +66,57 @@ static const ffmpeg_format_info_t formats[] =
                                        AV_CODEC_ID_PCM_ALAW,
                                        AV_CODEC_ID_PCM_MULAW,
                                        AV_CODEC_ID_NONE },
-    },
-    {
-      .name =       "MP2",
-      .short_name = "mp2",
+  };
+#endif
+
+#ifdef FORMAT_MP2
+#define NAME "mp2"
+static const ffmpeg_format_info_t format =
+  {
+      .label=       "MP2",
+      .name =       "mp2",
       .extension =  "mp2",
       .max_audio_streams = 1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MP2,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_PIPE,
-    },
-#if LIBAVCODEC_BUILD >= ((51<<16)+(32<<8)+0)
-    {
-      .name =       "WMA",
-      .short_name = "asf",
+  };
+
+#endif
+
+#ifdef FORMAT_WMA
+#define NAME "wma"
+static const ffmpeg_format_info_t format =
+  {
+      .label=       "WMA",
+      .name =       NAME,
+      .ffmpeg_name = "asf",
       .extension =  "wma",
       .max_audio_streams = 1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_WMAV2,
                                            AV_CODEC_ID_WMAV1,
                                            AV_CODEC_ID_NONE },
-    },
+    
+  };
 #endif
-#if 1
-    {
-      .name =       "ADTS",
-      .short_name = "adts",
+
+#ifdef FORMAT_ADTS
+#define NAME "adts"
+static const ffmpeg_format_info_t format =
+  {
+      .label=       "ADTS",
+      .name =       NAME,
       .extension =  "aac",
       .max_audio_streams = 1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AAC,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_PIPE,
-    },
-#endif
-    { /* End of formats */ }
   };
+#endif
 
 static void * create_ffmpeg()
   {
-  return bg_ffmpeg_create(formats);
+  return bg_ffmpeg_create(&format);
   }
 
 const bg_encoder_plugin_t the_plugin =
@@ -100,10 +124,9 @@ const bg_encoder_plugin_t the_plugin =
     .common =
     {
       BG_LOCALE,
-      .name =           "e_ffmpeg_audio",     /* Unique short name */
-      .long_name =      TRS("FFmpeg audio encoder"),
-      .description =    TRS("Plugin for encoding various audio formats with ffmpeg \
-(http://www.ffmpeg.org)."),
+      .name =           "e_" NAME,     /* Unique short name */
+      .long_name =      format.label,
+      .description =    TRS("Based on ffmpeg (http://www.ffmpeg.org)."),
       .type =           BG_PLUGIN_ENCODER_AUDIO,
       .flags =          BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =       5,

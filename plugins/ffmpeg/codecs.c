@@ -839,28 +839,23 @@ static void create_codec_parameter(bg_parameter_info_t * parameter_info,
 bg_parameter_info_t * 
 bg_ffmpeg_create_audio_parameters(const ffmpeg_format_info_t * format_info)
   {
-  int i, j, num_infos = 0;
+  int j, num_infos = 0;
   bg_parameter_info_t * ret;
   const ffmpeg_codec_info_t ** infos = NULL;
   
   /* Create codec array */
-  i = 0;
-  while(format_info[i].name)
+
+  if(!format_info->audio_codecs)
+    return NULL;
+  
+  j = 0;
+  while(format_info->audio_codecs[j] != AV_CODEC_ID_NONE)
     {
-    if(!format_info[i].audio_codecs)
-      {
-      i++;
-      continue;
-      }
-    j = 0;
-    while(format_info[i].audio_codecs[j] != AV_CODEC_ID_NONE)
-      {
-      infos = add_codec_info(infos, format_info[i].audio_codecs[j],
-                             &num_infos);
-      j++;
-      }
-    i++;
+    infos = add_codec_info(infos, format_info->audio_codecs[j],
+                           &num_infos);
+    j++;
     }
+  
 
   if(!infos)
     return NULL;
@@ -876,27 +871,20 @@ bg_ffmpeg_create_audio_parameters(const ffmpeg_format_info_t * format_info)
 bg_parameter_info_t * 
 bg_ffmpeg_create_video_parameters(const ffmpeg_format_info_t * format_info)
   {
-  int i, j, num_infos = 0;
+  int j, num_infos = 0;
   bg_parameter_info_t * ret;
   const ffmpeg_codec_info_t ** infos = NULL;
 
   /* Create codec array */
-  i = 0;
-  while(format_info[i].name)
+  if(!format_info->video_codecs)
+    return NULL;
+  
+  j = 0;
+  while(format_info->video_codecs[j] != AV_CODEC_ID_NONE)
     {
-    if(!format_info[i].video_codecs)
-      {
-      i++;
-      continue;
-      }
-    j = 0;
-    while(format_info[i].video_codecs[j] != AV_CODEC_ID_NONE)
-      {
-      infos = add_codec_info(infos, format_info[i].video_codecs[j],
-                             &num_infos);
-      j++;
-      }
-    i++;
+    infos = add_codec_info(infos, format_info->video_codecs[j],
+                           &num_infos);
+    j++;
     }
 
   if(!infos)

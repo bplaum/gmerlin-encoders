@@ -35,6 +35,7 @@
 #define guess_format(a, b, c) av_guess_format(a, b, c)
 #endif
 
+
 #define FLAG_CONSTANT_FRAMERATE (1<<0)
 #define FLAG_INTRA_ONLY         (1<<1)
 #define FLAG_B_FRAMES           (1<<2)
@@ -43,8 +44,8 @@
 
 typedef struct
   {
-  char * name;
-  char * long_name;
+  const char * name;
+  const char * long_name;
   enum AVCodecID id;
   const bg_parameter_info_t * parameters;
 
@@ -54,9 +55,11 @@ typedef struct
 
 typedef struct
   {
-  char * name;
-  char * short_name;
-  char * extension;
+  char * label;
+  const char * name;
+  const char * ffmpeg_name;
+
+  const char * extension;
   
   int max_audio_streams;
   int max_video_streams;
@@ -69,6 +72,8 @@ typedef struct
   } ffmpeg_format_info_t;
 
 /* codecs.c */
+
+const  AVOutputFormat * bg_ffmpeg_guess_format(const ffmpeg_format_info_t * format);
 
 bg_parameter_info_t *
 bg_ffmpeg_create_audio_parameters(const ffmpeg_format_info_t * format_info);
@@ -310,7 +315,7 @@ struct ffmpeg_priv_s
 extern const bg_encoder_framerate_t
 bg_ffmpeg_mpeg_framerates[];
 
-void * bg_ffmpeg_create(const ffmpeg_format_info_t * formats);
+void * bg_ffmpeg_create(const ffmpeg_format_info_t * format);
 
 void bg_ffmpeg_destroy(void*);
 

@@ -26,11 +26,12 @@
 
 #include "ffmpeg_common.h"
 
-static const ffmpeg_format_info_t formats[] =
+#ifdef FORMAT_AVI
+#define NAME "avi"
+static const ffmpeg_format_info_t format =
   {
-    {
-      .name =       "AVI",
-      .short_name = "avi",
+      .label =      "AVI",
+      .name =       NAME,
       .extension =  "avi",
       .max_audio_streams = 1,
       .max_video_streams = 1,
@@ -48,10 +49,15 @@ static const ffmpeg_format_info_t formats[] =
                                            AV_CODEC_ID_MJPEG,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE,
-    },
-    {
-      .name =       "MPEG-1",
-      .short_name = "mpeg",
+  };
+#endif
+
+#ifdef FORMAT_MPEG
+#define NAME "mpeg"
+static const ffmpeg_format_info_t format =
+  {
+      .label =      "MPEG-1",
+      .name =       NAME,
       .extension =  "mpg",
       .max_audio_streams = -1,
       .max_video_streams = -1,
@@ -62,10 +68,15 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG1VIDEO,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
-    {
-      .name =       "MPEG-2 (generic)",
-      .short_name = "vob",
+  };
+#endif
+
+#ifdef FORMAT_VOB
+#define NAME "vob"
+static const ffmpeg_format_info_t format =
+  {
+      .label =      "MPEG-2 (generic)",
+      .name =       NAME,
       .extension =  "vob",
       .max_audio_streams = -1,
       .max_video_streams = -1,
@@ -77,10 +88,15 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG2VIDEO,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
-    {
-      .name =       "MPEG-2 (dvd)",
-      .short_name = "dvd",
+  };
+#endif
+
+#ifdef FORMAT_DVD
+#define NAME "dvd"
+static const ffmpeg_format_info_t format =
+  {
+      .label =      "MPEG-2 (dvd)",
+      .name =       "dvd",
       .extension =  "vob",
       .max_audio_streams = -1,
       .max_video_streams = -1,
@@ -91,24 +107,15 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG2VIDEO,
                                            AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
-    {
-      .name =       "Flash Video",
-      .short_name = "flv",
-      .extension =  "flv",
-      .max_audio_streams = 1,
-      .max_video_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MP3,
-                                         AV_CODEC_ID_AAC,
-                                         AV_CODEC_ID_NONE },
-      
-      .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_FLV1,
-                                         AV_CODEC_ID_H264,
-                                         AV_CODEC_ID_NONE },
-    },
-    {
-      .name =       "ASF",
-      .short_name = "asf",
+  };
+#endif
+
+#ifdef FORMAT_ASF
+#define NAME "asf"
+static const ffmpeg_format_info_t format =
+  {
+      .label =      "ASF",
+      .name =       NAME,
       .extension =  "asf",
       .max_audio_streams = 1,
       .max_video_streams = 1,
@@ -124,11 +131,16 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_WMV1,
                                        // AV_CODEC_ID_WMV2, /* Crash */
                                        AV_CODEC_ID_NONE },
-    },
-    {
-      .name =       "MPEG-2 Transport stream",
-      .short_name = "mpegts",
-      .extension =  "ts",
+  };
+#endif
+
+#ifdef FORMAT_MPEGTS
+#define NAME "mpegts"
+static const ffmpeg_format_info_t format =
+  {
+      .label =       "MPEG-2 Transport stream",
+      .name =        NAME,
+      .extension =   "ts",
       .max_audio_streams = 1,
       .max_video_streams = 1,
       .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MP3,
@@ -140,11 +152,17 @@ static const ffmpeg_format_info_t formats[] =
                                         AV_CODEC_ID_MPEG2VIDEO,
                                         AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
-    },
-    {
-      .name =       "Matroska",
-      .short_name = "matroska",
-      .extension =  "mkv",
+ 
+  };
+#endif
+
+#ifdef FORMAT_MATROSKA
+#define NAME "matroska"
+static const ffmpeg_format_info_t format =
+  {
+      .label =       "Matroska",
+      .name =        NAME,
+      .extension =   "mkv",
       .max_audio_streams = -1,
       .max_video_streams = -1,
       .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MP3,
@@ -162,11 +180,15 @@ static const ffmpeg_format_info_t formats[] =
                                           AV_CODEC_ID_VP8,
                                           AV_CODEC_ID_MSMPEG4V3,
                                           AV_CODEC_ID_NONE },
-      //      .flags = FLAG_CONSTANT_FRAMERATE,
-    },
-    {
-      .name =       "webm",
-      .short_name = "webm",
+  };
+#endif
+
+#ifdef FORMAT_WEBM
+#define NAME "webm"
+static const ffmpeg_format_info_t format =
+  {
+      .label =      "Webm",
+      .name =       NAME,
       .extension =  "webm",
       .max_audio_streams = -1,
       .max_video_streams = -1,
@@ -176,11 +198,16 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){ AV_CODEC_ID_VP8,
                                           AV_CODEC_ID_NONE },
       .flags = FLAG_PIPE,
-    },
-    {
-      .name =       "MP4",
-      .short_name = "mp4",
-      .extension =  "mp4",
+  };
+#endif
+
+#ifdef FORMAT_MP4
+#define NAME "mp4"
+static const ffmpeg_format_info_t format =
+  {
+      .label =       "MP4",
+      .name =        NAME,
+      .extension =   "mp4",
       .max_audio_streams = -1,
       .max_video_streams = -1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AAC,
@@ -189,40 +216,22 @@ static const ffmpeg_format_info_t formats[] =
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG4,
                                            AV_CODEC_ID_H264,
                                            AV_CODEC_ID_NONE },
-
-    },
-#if 0 // Encoded file is messed up
-    {
-      .name =       "Real Media",
-      .short_name = "rm",
-      .extension =  "rm",
-      .max_audio_streams = 1,
-      .max_video_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AC3,
-                                           AV_CODEC_ID_NONE },
-      
-      .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_RV10,
-                                           AV_CODEC_ID_NONE },
-    },
-#endif
-    { /* End of formats */ }
   };
+#endif
 
 static void * create_ffmpeg()
   {
-  return bg_ffmpeg_create(formats);
+  return bg_ffmpeg_create(&format);
   }
-
 
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
     {
       BG_LOCALE,
-      .name =           "e_ffmpeg",       /* Unique short name */
-      .long_name =      TRS("FFmpeg audio/video encoder"),
-      .description =    TRS("Plugin for encoding various audio/video formats with ffmpeg \
-(http://www.ffmpeg.org)."),
+      .name =           "e_" NAME,       /* Unique short name */
+      .long_name =      format.label,
+      .description =    TRS("Based on ffmpeg (http://www.ffmpeg.org)."),
       .type =           BG_PLUGIN_ENCODER,
       .flags =          BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =       5,

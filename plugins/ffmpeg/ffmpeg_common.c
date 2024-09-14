@@ -40,40 +40,6 @@ static void copy_extradata(AVCodecParameters * avctx,
                            const gavl_compression_info_t * ci);
 
 
-static bg_parameter_info_t *
-create_format_parameters(const ffmpeg_format_info_t * formats)
-  {
-  int num_formats, i;
-  
-  bg_parameter_info_t * ret;
-  ret = calloc(2, sizeof(*ret));
-
-  ret[0].name = gavl_strrep(ret[0].name, "format");
-  ret[0].long_name = gavl_strrep(ret[0].long_name, TRS("Format"));
-  ret[0].type = BG_PARAMETER_STRINGLIST;
-
-  num_formats = 0;
-  while(formats[num_formats].name)
-    num_formats++;
-
-  ret[0].multi_names_nc =
-    calloc(num_formats+1, sizeof(*ret[0].multi_names_nc));
-  ret[0].multi_labels_nc =
-    calloc(num_formats+1, sizeof(*ret[0].multi_labels_nc));
-
-  for(i = 0; i < num_formats; i++)
-    {
-    ret[0].multi_names_nc[i] =
-      gavl_strrep(ret[0].multi_names_nc[i], formats[i].short_name);
-    ret[0].multi_labels_nc[i] =
-      gavl_strrep(ret[0].multi_labels_nc[i], formats[i].name);
-    }
-  bg_parameter_info_set_const_ptrs(&ret[0]);
-
-  gavl_value_set_string(&ret[0].val_default, formats[0].short_name);
-  return ret;
-  }
-
 void * bg_ffmpeg_create(const ffmpeg_format_info_t * formats)
   {
   ffmpeg_priv_t * ret;
@@ -86,7 +52,6 @@ void * bg_ffmpeg_create(const ffmpeg_format_info_t * formats)
     bg_ffmpeg_create_audio_parameters(formats);
   ret->video_parameters =
     bg_ffmpeg_create_video_parameters(formats);
-  ret->parameters = create_format_parameters(formats);
   
   return ret;
   }
@@ -142,26 +107,11 @@ const bg_parameter_info_t * bg_ffmpeg_get_video_parameters(void * data)
 void bg_ffmpeg_set_parameter(void * data, const char * name,
                              const gavl_value_t * v)
   {
-  int i;
-  ffmpeg_priv_t * priv;
-  priv = data;
+  //  ffmpeg_priv_t * priv = data;
+
   if(!name)
     {
     return;
-    }
-  /* Get format to encode */
-  if(!strcmp(name, "format"))
-    {
-    i = 0;
-    while(priv->formats[i].name)
-      {
-      if(!strcmp(priv->formats[i].short_name, v->v.str))
-        {
-        priv->format = &priv->formats[i];
-        break;
-        }
-      i++;
-      }
     }
   
   }
@@ -265,7 +215,7 @@ static int ffmpeg_open(void * data, const char * filename,
     return 0;
   
   /* Initialize format context */
-  fmt = guess_format(priv->format->short_name, NULL, NULL);
+  fmt = av_guess_format(priv->format->name, NULL, NULL);
   if(!fmt)
     return 0;
   priv->ctx = avformat_alloc_context();
@@ -1121,4 +1071,14 @@ bg_ffmpeg_get_text_packet_sink(void * data, int stream)
   {
   ffmpeg_priv_t * f = data;
   return f->text_streams[stream].com.psink;
+  }
+
+const  AVOutputFormat * bg_ffmpeg_guess_format(const ffmpeg_format_info_t * format)
+  {
+  if(format->ffmpeg_name)
+    return av_guess_format(format->ffmpeg_name,
+                           NULL, NULL);
+  else
+    return av_guess_format(format->name,
+                           NULL, NULL);
   }

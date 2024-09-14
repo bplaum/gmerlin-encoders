@@ -95,7 +95,7 @@ const bg_encoder_plugin_t the_plugin =
     {
       BG_LOCALE,
       .name =            "e_opus",       /* Unique short name */
-      .long_name =       TRS("Opus encoder"),
+      .long_name =       TRS("Opus"),
       .description =     TRS("Encoder for Opus files"),
       .type =            BG_PLUGIN_ENCODER_AUDIO,
       .flags =           BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
