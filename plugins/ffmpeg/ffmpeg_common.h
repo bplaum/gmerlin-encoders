@@ -297,7 +297,6 @@ struct ffmpeg_priv_s
   bg_parameter_info_t * video_parameters;
   bg_parameter_info_t * parameters;
   
-  const ffmpeg_format_info_t * formats;
   const ffmpeg_format_info_t * format;
 
   int initialized;

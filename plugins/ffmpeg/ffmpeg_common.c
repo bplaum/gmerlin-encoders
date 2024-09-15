@@ -39,19 +39,38 @@
 static void copy_extradata(AVCodecParameters * avctx,
                            const gavl_compression_info_t * ci);
 
+static void set_audio_compression(AVCodecParameters * avctx,
+                                  const gavl_compression_info_t * ci)
+  {
+  if(ci->bitrate > 0)
+    avctx->bit_rate = ci->bitrate;
+  
+  if(ci->block_align > 0)
+    avctx->block_align = ci->block_align;
+  
+  copy_extradata(avctx, ci);
+  }
 
-void * bg_ffmpeg_create(const ffmpeg_format_info_t * formats)
+static void set_video_compression(AVCodecParameters * avctx,
+                                  const gavl_compression_info_t * ci)
+  {
+  copy_extradata(avctx, ci);
+  
+  }
+
+
+void * bg_ffmpeg_create(const ffmpeg_format_info_t * format)
   {
   ffmpeg_priv_t * ret;
 
   ret = calloc(1, sizeof(*ret));
   
-  ret->formats = formats;
+  ret->format = format;
 
   ret->audio_parameters =
-    bg_ffmpeg_create_audio_parameters(formats);
+    bg_ffmpeg_create_audio_parameters(format);
   ret->video_parameters =
-    bg_ffmpeg_create_video_parameters(formats);
+    bg_ffmpeg_create_video_parameters(format);
   
   return ret;
   }
@@ -215,7 +234,7 @@ static int ffmpeg_open(void * data, const char * filename,
     return 0;
   
   /* Initialize format context */
-  fmt = av_guess_format(priv->format->name, NULL, NULL);
+  fmt = bg_ffmpeg_guess_format(priv->format);
   if(!fmt)
     return 0;
   priv->ctx = avformat_alloc_context();
@@ -660,7 +679,8 @@ static int open_audio_encoder(bg_ffmpeg_audio_stream_t * st)
 
   gavl_stream_get_compression_info(&st->com.s, &st->com.ci);
   
-  copy_extradata(st->com.stream->codecpar, &st->com.ci);
+  set_audio_compression(st->com.stream->codecpar, &st->com.ci);
+  
   st->com.stream->codecpar->codec_id = st->com.codec->id;
   
   bg_ffmpeg_codec_set_packet_sink(st->com.codec, st->com.psink);
@@ -702,8 +722,7 @@ static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
     return 0;
 
   gavl_stream_get_compression_info(&st->com.s, &st->com.ci);
-  
-  copy_extradata(st->com.stream->codecpar, &st->com.ci);
+  set_video_compression(st->com.stream->codecpar, &st->com.ci);
   st->com.stream->codecpar->codec_id = st->com.codec->id;
   
   bg_ffmpeg_codec_set_packet_sink(st->com.codec, st->com.psink);
@@ -779,7 +798,10 @@ int bg_ffmpeg_start(void * data)
                                        gavl_io_can_seek(priv->io) ? io_seek : NULL);
     }
   else if(avio_open(&priv->ctx->pb, priv->ctx->url, AVIO_FLAG_WRITE) < 0)
+    {
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "avio_open failed");
     return 0;
+    }
   
 #if LIBAVFORMAT_VERSION_MAJOR < 54
   if(av_write_header(priv->ctx))
@@ -1017,8 +1039,8 @@ bg_ffmpeg_add_audio_stream_compressed(void * priv,
     st->com.stream->codecpar->bit_rate = st->com.ci.bitrate;
     // st->com.stream->codecpar->rc_max_rate = st->com.ci.bitrate;
     }
-  /* Set extradata */
-  copy_extradata(st->com.stream->codecpar, &st->com.ci);
+  /* Set compression data */
+  set_audio_compression(st->com.stream->codecpar, &st->com.ci);
   return ret;
   }
 
@@ -1040,15 +1062,16 @@ int bg_ffmpeg_add_video_stream_compressed(void * priv,
   st->dts = GAVL_TIME_UNDEFINED;
 
   if(st->com.ci.bitrate)
-    {
-    //    st->com.stream->codecpar->rc_max_rate = st->com.ci.bitrate;
     st->com.stream->codecpar->bit_rate = st->com.ci.bitrate;
-    }
+
+  if(st->com.ci.block_align)
+    st->com.stream->codecpar->block_align = st->com.ci.block_align;
+  
   //  if(st->com.ci.video_buffer_size)
   //    st->com.stream->codecpar->rc_buffer_size = st->com.ci.video_buffer_size * 8;
   
-  /* Set extradata */
-  copy_extradata(st->com.stream->codecpar, &st->com.ci);
+  /* Set compression data */
+  set_video_compression(st->com.stream->codecpar, &st->com.ci);
   return ret;
   }
 

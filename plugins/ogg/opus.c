@@ -193,7 +193,7 @@ static const bg_parameter_info_t parameters[] =
                                         TRS("Full (20 kHz)"),
                                         NULL },
     },
-#if 0 // Request not implemented
+#if 1 // Request not implemented
     {
       .name =        "max_bandwidth",
       .long_name =   TRS("Maximum bandwidth"),
@@ -285,6 +285,21 @@ static void set_parameter_opus(void * data, const char * name,
       opus->bandwidth = OPUS_BANDWIDTH_FULLBAND;
     else if(!strcmp(v->v.str, "auto"))
       opus->bandwidth = OPUS_AUTO;
+    }
+  else if(!strcmp(name, "max_bandwidth"))
+    {
+    if(!strcmp(v->v.str, "narrow"))
+      opus->max_bandwidth = OPUS_BANDWIDTH_NARROWBAND;
+    else if(!strcmp(v->v.str, "medium"))
+      opus->max_bandwidth = OPUS_BANDWIDTH_MEDIUMBAND;
+    else if(!strcmp(v->v.str, "wide"))
+      opus->max_bandwidth = OPUS_BANDWIDTH_WIDEBAND;
+    else if(!strcmp(v->v.str, "superwide"))
+      opus->max_bandwidth = OPUS_BANDWIDTH_SUPERWIDEBAND;
+    else if(!strcmp(v->v.str, "full"))
+      opus->max_bandwidth = OPUS_BANDWIDTH_FULLBAND;
+    else if(!strcmp(v->v.str, "auto"))
+      opus->max_bandwidth = OPUS_AUTO;
     }
   else if(!strcmp(name, "loss_perc"))
     {
@@ -457,13 +472,29 @@ init_opus(void * data, gavl_dictionary_t * s)
       opus_multistream_encoder_ctl(opus->enc, OPUS_SET_VBR_CONSTRAINT(0));
       break;
     }
-  
-  if((err = opus_multistream_encoder_ctl(opus->enc,
-                                         OPUS_SET_BITRATE(opus->bitrate))) != OPUS_OK)
+
+  if(opus->bitrate <= 0)
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting bitrate failed: %s",
-           opus_strerror(err));
+    if((err = opus_multistream_encoder_ctl(opus->enc,
+                                           OPUS_SET_BITRATE(OPUS_AUTO))) != OPUS_OK)
+      {
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting bitrate to %d failed: %s",
+               opus->bitrate,
+               opus_strerror(err));
+      }
     }
+  else
+    {
+    if((err = opus_multistream_encoder_ctl(opus->enc,
+                                           OPUS_SET_BITRATE(opus->bitrate))) != OPUS_OK)
+      {
+      gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting bitrate to %d failed: %s",
+               opus->bitrate,
+               opus_strerror(err));
+      }
+
+    }
+  
   
   if((err = opus_multistream_encoder_ctl(opus->enc,
                                          OPUS_SET_COMPLEXITY(opus->complexity))) != OPUS_OK)
@@ -492,14 +523,16 @@ init_opus(void * data, gavl_dictionary_t * s)
   if((err = opus_multistream_encoder_ctl(opus->enc,
                                          OPUS_SET_BANDWIDTH(opus->bandwidth))) != OPUS_OK)
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting bandwidth failed: %s",
-           opus_strerror(err));
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting bandwidth to %d failed: %s",
+             opus->bandwidth,
+             opus_strerror(err));
     }
   if((err = opus_multistream_encoder_ctl(opus->enc,
                                          OPUS_SET_MAX_BANDWIDTH(opus->max_bandwidth))) != OPUS_OK)
     {
-    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting max bandwidth failed: %s",
-           opus_strerror(err));
+    gavl_log(GAVL_LOG_WARNING, LOG_DOMAIN, "Setting max bandwidth to %d failed: %s",
+             opus->max_bandwidth,
+             opus_strerror(err));
     }
   /* Get preskip */
 

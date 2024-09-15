@@ -195,12 +195,11 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
   gavl_compression_info_init(&ci);
   
   /* Set up compression info */
-  
-  if((ci.id = bg_codec_id_ffmpeg_2_gavl(ctx->codec->id)) == GAVL_CODEC_ID_NONE)
-    return 0;
 
-  /* Extract extradata */
+  if((ci.id = bg_codec_id_ffmpeg_2_gavl(ctx->codec->id)))
+    ci.id = GAVL_CODEC_ID_EXTENDED;
   
+  /* Extract extradata */
   if(ctx->avctx->extradata_size)
     {
     gavl_buffer_append_data(&ci.codec_header, ctx->avctx->extradata, ctx->avctx->extradata_size);
@@ -209,6 +208,9 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
   
   switch(ctx->avctx->codec_id)
     {
+    case AV_CODEC_ID_WMAV1:
+    case AV_CODEC_ID_WMAV2:
+      ci.block_align = ctx->avctx->block_align;
     case AV_CODEC_ID_MP2:
     case AV_CODEC_ID_AC3:
       ci.bitrate = ctx->avctx->bit_rate;
@@ -222,7 +224,6 @@ static int set_compression_info(bg_ffmpeg_codec_context_t * ctx,
     }
   else if(ctx->avctx->codec_type == AVMEDIA_TYPE_VIDEO)
     {
-
     if(!(info->flags & FLAG_INTRA_ONLY))
       {
       if((ctx->avctx->gop_size > 1) ||
