@@ -555,6 +555,10 @@ init_opus(void * data, gavl_dictionary_t * s)
   /* Output header */
 
   header_to_packet(&opus->h, &ci.codec_header);
+
+  //  fprintf(stderr, "Encoded header packet:\n");
+  //  gavl_hexdump(ci.codec_header.buf, ci.codec_header.len, 16);
+  
   ci.id = GAVL_CODEC_ID_OPUS;
   ci.pre_skip = opus->h.pre_skip;
 
@@ -586,6 +590,7 @@ static int init_compressed_opus(bg_ogg_stream_t * s)
   gavl_dictionary_t * m_stream = gavl_stream_get_metadata_nc(&s->s);
   
   gavl_compression_info_init(&ci);
+  gavl_stream_get_compression_info(&s->s, &ci);
   
   memset(&op, 0, sizeof(op));
   

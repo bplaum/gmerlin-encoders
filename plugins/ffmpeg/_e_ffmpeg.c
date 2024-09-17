@@ -35,12 +35,12 @@ static const ffmpeg_format_info_t format =
       .extension =  "avi",
       .max_audio_streams = 1,
       .max_video_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_PCM_S16LE,
+      .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MP3,
+                                           AV_CODEC_ID_MP2,
+                                           AV_CODEC_ID_PCM_S16LE,
                                            AV_CODEC_ID_PCM_U8,
                                            AV_CODEC_ID_PCM_ALAW,
                                            AV_CODEC_ID_PCM_MULAW,
-                                           AV_CODEC_ID_MP3,
-                                           AV_CODEC_ID_MP2,
                                            AV_CODEC_ID_AC3,
                                            AV_CODEC_ID_NONE },
 
@@ -120,10 +120,8 @@ static const ffmpeg_format_info_t format =
       .max_audio_streams = 1,
       .max_video_streams = 1,
       .audio_codecs = (enum AVCodecID[]){
-#if LIBAVCODEC_BUILD >= ((51<<16)+(32<<8)+0)
                                        AV_CODEC_ID_WMAV2,
                                        AV_CODEC_ID_WMAV1,
-#endif
                                        AV_CODEC_ID_MP3,
                                        AV_CODEC_ID_MP2,
                                        AV_CODEC_ID_NONE },
@@ -143,14 +141,14 @@ static const ffmpeg_format_info_t format =
       .extension =   "ts",
       .max_audio_streams = 1,
       .max_video_streams = 1,
-      .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MP3,
-                                        AV_CODEC_ID_MP2,
-                                        AV_CODEC_ID_AC3,
-                                        AV_CODEC_ID_NONE },
+      .audio_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MP2,
+                                          AV_CODEC_ID_MP3,
+                                          AV_CODEC_ID_AC3,
+                                          AV_CODEC_ID_NONE },
       
-      .video_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MPEG1VIDEO,
-                                        AV_CODEC_ID_MPEG2VIDEO,
-                                        AV_CODEC_ID_NONE },
+      .video_codecs = (enum AVCodecID[]){ AV_CODEC_ID_MPEG2VIDEO,
+                                          AV_CODEC_ID_MPEG1VIDEO,
+                                          AV_CODEC_ID_NONE },
       .flags = FLAG_CONSTANT_FRAMERATE | FLAG_PIPE,
  
   };
@@ -213,8 +211,8 @@ static const ffmpeg_format_info_t format =
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AAC,
                                            AV_CODEC_ID_NONE },
 
-      .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_MPEG4,
-                                           AV_CODEC_ID_H264,
+      .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_H264,
+                                           AV_CODEC_ID_MPEG4,
                                            AV_CODEC_ID_NONE },
   };
 #endif
