@@ -294,7 +294,8 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
   
   if(!packet.packet)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken theora header");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Didn't get first header page");
+    gavl_hexdump(ci.codec_header.buf, ci.codec_header.len, 16);
     goto fail;
     }
 
@@ -327,7 +328,7 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
   
   if(!packet.packet)
     {
-    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Broken theora header");
+    gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Didn't get code pages");
     goto fail;
     }
   
@@ -604,6 +605,7 @@ init_theora(void * data, gavl_dictionary_t * s)
   theora->buf[2].width  = theora->format->frame_width  / sub_h;
   theora->buf[2].height = theora->format->frame_height / sub_v;
   
+  gavl_stream_set_compression_info(s, &ci);
   gavl_compression_info_free(&ci);
   
   return gavl_video_sink_create(NULL, write_video_frame_theora, theora,
