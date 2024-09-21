@@ -3,15 +3,6 @@
 /* Define if building universal (internal helper macro) */
 #undef AC_APPLE_UNIVERSAL_BUILD
 
-/* Flac major version */
-#undef BGAV_FLAC_MAJOR
-
-/* Flac minor version */
-#undef BGAV_FLAC_MINOR
-
-/* Flac patchlevel */
-#undef BGAV_FLAC_PATCHLEVEL
-
 /* Define to 1 if translation of program messages to the user's native
    language is requested. */
 #undef ENABLE_NLS
@@ -44,7 +35,7 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
-/* Enable lame */
+/* Do we have lame installed? */
 #undef HAVE_LAME
 
 /* Ogg libraries are there */
@@ -52,9 +43,6 @@
 
 /* Do we have libopus installed? */
 #undef HAVE_OPUS
-
-/* Do we have libshout installed? */
-#undef HAVE_SHOUT
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -77,10 +65,7 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Do we have theora decoder installed? */
-#undef HAVE_THEORADEC
-
-/* Do we have theoraenc installed? */
+/* Do we have theora encoder installed? */
 #undef HAVE_THEORAENC
 
 /* Define to 1 if you have the <unistd.h> header file. */

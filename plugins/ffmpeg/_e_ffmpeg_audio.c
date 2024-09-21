@@ -119,6 +119,11 @@ static void * create_ffmpeg()
   return bg_ffmpeg_create(&format);
   }
 
+static const char * get_extensions_ffmpeg(void * data)
+  {
+  return format.extension;
+  }
+
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
@@ -134,6 +139,7 @@ const bg_encoder_plugin_t the_plugin =
       .destroy =        bg_ffmpeg_destroy,
       .get_parameters = bg_ffmpeg_get_parameters,
       .set_parameter =  bg_ffmpeg_set_parameter,
+      .get_extensions = get_extensions_ffmpeg,
     },
     
     .max_audio_streams =         1,

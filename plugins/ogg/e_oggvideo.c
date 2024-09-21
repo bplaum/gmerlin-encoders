@@ -262,6 +262,11 @@ static int writes_compressed_video_oggvideo(void * data,
     return 0;
   }
 
+static const char * get_extensions_oggvideo(void * priv)
+  {
+  return "ogv";
+  }
+
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
@@ -279,6 +284,8 @@ const bg_encoder_plugin_t the_plugin =
       .get_parameters =    get_parameters_oggvideo,
       .set_parameter =     set_parameter_oggvideo,
 #endif
+      .get_extensions = get_extensions_oggvideo,  
+
     },
     .max_audio_streams =   -1,
     .max_video_streams =   -1,

@@ -16,12 +16,6 @@ else
 lame_subdirs =
 endif
 
-if HAVE_FAAC
-faac_subdirs = faac
-else
-faac_subdirs =
-endif
-
 if HAVE_AVFORMAT
 ffmpeg_subdirs = ffmpeg
 else

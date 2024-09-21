@@ -263,10 +263,22 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
   
   if(ctx->aframe->valid_samples)
     {
+    /*
+     *  Pad with silent samples if the codec strictly requires fixed frame sizes.
+     *  The remainig samples should be zero from the last call to gavl_audio_frame_mute()
+     */
+    if((ctx->avctx->frame_size > 0) &&
+       (ctx->aframe->valid_samples < ctx->avctx->frame_size) &&
+       !(ctx->codec->capabilities & (AV_CODEC_CAP_SMALL_LAST_FRAME |
+                                     AV_CODEC_CAP_VARIABLE_FRAME_SIZE)))
+      ctx->aframe->valid_samples = ctx->avctx->frame_size;
+    
     ctx->frame->nb_samples = ctx->aframe->valid_samples;
     ctx->frame->pts = ctx->in_pts;
     ctx->in_pts += ctx->aframe->valid_samples;
     f = ctx->frame;
+
+
     }
   else
     {
@@ -275,6 +287,7 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     else
       return 0;
     }
+
   
   if((result = avcodec_send_frame(ctx->avctx, f)) < 0)
     {
@@ -454,6 +467,7 @@ void bg_ffmpeg_set_audio_format_params(AVCodecParameters * avctx,
   avctx->ch_layout.order = AV_CHANNEL_ORDER_NATIVE;
   avctx->ch_layout.nb_channels = fmt->num_channels;
   avctx->ch_layout.u.mask = bg_ffmpeg_get_channel_mask(fmt);
+  avctx->frame_size = fmt->samples_per_frame;
   }
 
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,

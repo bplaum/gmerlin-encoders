@@ -87,6 +87,10 @@ static int add_audio_stream_compressed_vorbis(void * data,
   return s->index;
   }
 
+static const char * get_extensions_vorbis(void * priv)
+  {
+  return "ogg";
+  }
 
 const bg_encoder_plugin_t the_plugin =
   {
@@ -101,6 +105,7 @@ const bg_encoder_plugin_t the_plugin =
       .priority =        5,
       .create =            bg_ogg_encoder_create,
       .destroy =           bg_ogg_encoder_destroy,
+      .get_extensions = get_extensions_ogg,  
     },
     .max_audio_streams =   1,
     .max_video_streams =   0,

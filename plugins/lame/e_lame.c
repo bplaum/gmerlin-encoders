@@ -399,6 +399,11 @@ static int close_lame(void * data, int do_delete)
   return 1;
   }
 
+static const char * get_extensions_lame(void * priv)
+  {
+  return "mp3";
+  }
+
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
@@ -414,6 +419,7 @@ const bg_encoder_plugin_t the_plugin =
       .destroy =           destroy_lame,
       .get_parameters =    get_parameters_lame,
       .set_parameter =     set_parameter_lame,
+      .get_extensions = get_extensions_lame,  
     },
     .max_audio_streams =   1,
     .max_video_streams =   0,

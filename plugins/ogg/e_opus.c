@@ -89,6 +89,11 @@ add_audio_stream_compressed_opus(void * data,
   return ret->index;
   }
 
+static const char * get_extensions_opus(void * priv)
+  {
+  return "opus";
+  }
+
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
@@ -106,6 +111,8 @@ const bg_encoder_plugin_t the_plugin =
       .get_parameters =    get_parameters_opus,
       .set_parameter =     set_parameter_opus,
 #endif
+      .get_extensions = get_extensions_opus,  
+
     },
     .max_audio_streams =   1,
     .max_video_streams =   0,

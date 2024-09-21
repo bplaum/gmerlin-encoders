@@ -682,6 +682,12 @@ static const bg_parameter_info_t * get_audio_parameters_flac(void * priv)
   return bg_flac_get_parameters();
   }
 
+static const char * get_extensions_flac(void * data)
+  {
+  return "flac";
+  }
+
+
 const bg_encoder_plugin_t the_plugin =
   {
     .common =
@@ -698,6 +704,8 @@ const bg_encoder_plugin_t the_plugin =
       .destroy =           destroy_flac,
       .get_parameters =    get_parameters_flac,
       .set_parameter =     set_parameter_flac,
+      .get_extensions = get_extensions_flac,
+
     },
     .max_audio_streams =   1,
     .max_video_streams =   0,
