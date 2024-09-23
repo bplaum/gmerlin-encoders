@@ -155,7 +155,7 @@ static int bg_ogg_stream_flush_page(bg_ogg_stream_t * s, int force)
   int result;
   ogg_page og;
   memset(&og, 0, sizeof(og));
-  if(force || (s->flags & STREAM_FORCE_FLUSH))
+  if(force)
     result = ogg_stream_flush(&s->os,&og);
   else
     result = ogg_stream_pageout(&s->os,&og);
@@ -246,12 +246,19 @@ static gavl_sink_status_t write_gavl_packet(void * data, gavl_packet_t * p)
   if(s->last_packet.buf.len)
     {
     ogg_packet op;
+    int force_flush = 0;
+    
     memset(&op, 0, sizeof(op));
     bg_ogg_packet_from_gavl(s, &s->last_packet, &op);
     op.packetno = s->packetno++;
     ogg_stream_packetin(&s->os, &op);
+
+    if((s->flags & STREAM_KEYFRAMES) &&
+       (p->flags & GAVL_PACKET_KEYFRAME))
+      force_flush = 1;
+    
     /* Flush pages if any */
-    if(bg_ogg_stream_flush(s, 0) < 0)
+    if(bg_ogg_stream_flush(s, force_flush) < 0)
       return GAVL_SINK_ERROR;
     }
   /* Save this packet */
@@ -382,6 +389,10 @@ bg_ogg_encoder_add_video_stream_compressed(void * data,
   gavl_stream_set_compression_info(&s->s, ci);
   gavl_video_format_copy(gavl_stream_get_video_format_nc(&s->s), format);
   s->flags |= STREAM_COMPRESSED;
+
+  if(ci->flags & GAVL_COMPRESSION_HAS_P_FRAMES)
+    s->flags |= STREAM_KEYFRAMES;
+
   return s;
   }
 

@@ -28,8 +28,8 @@
 typedef struct bg_ogg_encoder_s bg_ogg_encoder_t;
 typedef struct bg_ogg_stream_s bg_ogg_stream_t;
 
-#define STREAM_FORCE_FLUSH (1<<0)
 #define STREAM_COMPRESSED  (1<<1)
+#define STREAM_KEYFRAMES   (1<<2)
 
 typedef struct
   {

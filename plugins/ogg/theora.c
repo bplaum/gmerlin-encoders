@@ -338,6 +338,8 @@ static int init_compressed_theora(bg_ogg_stream_t * s)
     goto fail;
   
   theora->frames_since_keyframe = -1;
+
+  s->flags |= STREAM_KEYFRAMES;
   
   ret = 1;
 
