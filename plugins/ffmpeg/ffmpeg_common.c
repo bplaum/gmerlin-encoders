@@ -32,7 +32,7 @@
 
 #define LOG_DOMAIN "ffmpeg"
 
-// #define DUMP_AUDIO_PACKETS
+//#define DUMP_AUDIO_PACKETS
 // #define DUMP_VIDEO_PACKETS
 // #define DUMP_TEXT_PACKETS
 
@@ -532,7 +532,6 @@ static int64_t rescale_video_timestamp(bg_ffmpeg_video_stream_t * st,
                                        int64_t ts)
   {
   AVRational framerate;
-
   
   if(st->format->framerate_mode == GAVL_FRAMERATE_CONSTANT)
     {
@@ -573,9 +572,11 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
   st->com.pkt->size = packet->buf.len;
 
   st->com.pkt->pts      = rescale_video_timestamp(st, packet->pts);
+  st->com.pkt->dts      = rescale_video_timestamp(st, packet->dts);
+  
   st->com.pkt->duration = rescale_video_timestamp(st, packet->duration);
   
-  //  fprintf(stderr, "PTS: %"PRId64" Duration: %"PRId64"\n", pkt.pts, pkt.duration);
+  // fprintf(stderr, "Video PTS: %"PRId64" Duration: %"PRId64"\n", st->com.pkt->pts, st->com.pkt->duration);
 
   if(st->com.ci.flags & GAVL_COMPRESSION_HAS_B_FRAMES)
     {
@@ -626,6 +627,8 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
 
   time_base.num = 1;
   time_base.den = st->format->samplerate;
+
+  //  fprintf(stderr, "AUDIO 1 PTS: %"PRId64" Duration: %"PRId64"\n", packet->pts, packet->duration);
   
   st->com.pkt->pts= av_rescale_q(packet->pts,
                                  time_base,
@@ -637,6 +640,8 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   
   st->com.pkt->dts = st->com.pkt->pts;
 
+  //  fprintf(stderr, "AUDIO 2 PTS: %"PRId64" Duration: %"PRId64"\n", st->com.pkt->pts, st->com.pkt->duration);
+  
   if(st->com.ci.flags & GAVL_COMPRESSION_SBR)
     {
     st->com.pkt->pts /= 2;

@@ -322,9 +322,9 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
       return 0;
       }
     
-    ctx->gp.pts      = ctx->out_pts;
-    ctx->gp.duration = ctx->afmt.samples_per_frame;
-
+    ctx->gp.pts      = ctx->pkt->pts;
+    ctx->gp.duration = ctx->pkt->duration;
+    
     // fprintf(stderr, "Samples written: %ld\n", ctx->samples_written);
     
     /* Last frame can be smaller */
@@ -660,7 +660,16 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
     gavl_packet_reset(&ctx->gp);
 
     ctx->gp.pts = ctx->pkt->pts;
+    ctx->gp.dts = ctx->pkt->dts;
+    
+#if 0
+    ctx->gp.duration = ctx->pkt->duration;
+    ctx->gp.dts = ctx->pkt->dts;
 
+    fprintf(stderr, "PTS: %"PRId64" DTS: %"PRId64" DUR: %"PRId64"\n",
+            ctx->gp.pts, ctx->gp.dts, ctx->gp.duration);
+#endif
+    
     if(ctx->pkt->flags & AV_PKT_FLAG_KEY)
       ctx->gp.flags |= GAVL_PACKET_KEYFRAME;
     
@@ -668,12 +677,18 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
     ctx->gp.buf.buf = ctx->pkt->data;
     
     if(ctx->vfmt.framerate_mode == GAVL_FRAMERATE_CONSTANT)
+      {
       ctx->gp.pts *= ctx->vfmt.frame_duration;
-    
+      ctx->gp.dts *= ctx->vfmt.frame_duration;
+      }
     /* Detect VP8 alternate reference frames */
     if((ctx->id == AV_CODEC_ID_VP8) &&
        !(ctx->gp.buf.buf[0] & 0x10))
-      ctx->gp.flags |= GAVL_PACKET_NOOUTPUT; 
+      {
+      ctx->gp.flags |= GAVL_PACKET_NOOUTPUT;
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN,
+               "Got alterate reference frame %"PRId64, ctx->gp.pts);
+      }
     else
       {
       /* Decide frame type */
@@ -696,7 +711,7 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
         //     fprintf(stderr, "Got no packet in cache for pts %"PRId64"\n", ctx->gp.pts);
         }
       //      else
-        //        fprintf(stderr, "pop packet: %"PRId64"\n", ctx->gp.pts);
+      //  fprintf(stderr, "pop packet: %"PRId64"\n", ctx->gp.pts);
       }
     /* Write frame */
 
@@ -734,7 +749,7 @@ write_video_func(void * data, gavl_video_frame_t * frame)
   
   if(ctx->convert_frame)
     ctx->convert_frame(ctx, frame);
-
+  
   ctx->frame->pts = frame->timestamp;
   if(ctx->vfmt.framerate_mode == GAVL_FRAMERATE_CONSTANT)
     ctx->frame->pts /= ctx->vfmt.frame_duration;
