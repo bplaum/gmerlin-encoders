@@ -132,7 +132,7 @@ int bg_vorbis_comment_write(gavl_io_t * output,
         int val_i;
         if(gavl_dictionary_get_int(m_global, tags[i].gavl_name, &val_i))
           {
-          char * tmp_string = bg_sprintf("%d", val_i);
+          char * tmp_string = gavl_sprintf("%d", val_i);
 
           len1 = strlen(tags[i].vorbis_name);
           len2 = strlen(tmp_string);
@@ -174,7 +174,7 @@ int bg_vorbis_comment_write(gavl_io_t * output,
     char * tmp_string;
     len1 = 5; // DATE=
 
-    tmp_string = bg_sprintf("%d", year);
+    tmp_string = gavl_sprintf("%d", year);
     
     len2 = strlen(tmp_string);
     

@@ -1159,7 +1159,7 @@ static const enum_t faac_profile[] =
   if(!strcmp(n, name)) \
     { \
     char * str; \
-    str = bg_sprintf("%f", val->v.d); \
+    str = gavl_sprintf("%f", val->v.d); \
     av_dict_set(options, ffmpeg_key, str, 0); \
     free(str); \
     }
@@ -1168,7 +1168,7 @@ static const enum_t faac_profile[] =
   if(!strcmp(n, name)) \
     { \
     char * str; \
-    str = bg_sprintf("%d", val->v.i); \
+    str = gavl_sprintf("%d", val->v.i); \
     av_dict_set(options, ffmpeg_key, str, 0); \
     free(str); \
     }

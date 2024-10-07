@@ -496,7 +496,7 @@ void bg_flac_free(bg_flac_t * flac)
   if((val = gavl_dictionary_get_string(m, gavl_name)))    \
     { \
     memset(&entry, 0, sizeof(entry)); \
-    entry.entry = (uint8_t*)bg_sprintf("%s=%s", key, val);   \
+    entry.entry = (uint8_t*)gavl_sprintf("%s=%s", key, val);   \
     entry.length = strlen((char*)entry.entry);                        \
     FLAC__metadata_object_vorbiscomment_insert_comment(flac->vorbis_comment, \
                                                        num_comments++,  \
@@ -508,7 +508,7 @@ void bg_flac_free(bg_flac_t * flac)
 #define INT_COMMENT(num, key) \
    {\
    memset(&entry, 0, sizeof(entry));            \
-   entry.entry = (uint8_t*)bg_sprintf("%s=%d", key, num);             \
+   entry.entry = (uint8_t*)gavl_sprintf("%s=%d", key, num);             \
    entry.length = strlen((char*)entry.entry);                           \
    FLAC__metadata_object_vorbiscomment_insert_comment(flac->vorbis_comment, \
                                                       num_comments++,   \
@@ -521,7 +521,7 @@ void bg_flac_free(bg_flac_t * flac)
   if(m->str) \
     { \
     memset(&entry, 0, sizeof(entry)); \
-    entry.entry = (uint8_t*)bg_sprintf("%s", m->str);   \
+    entry.entry = (uint8_t*)gavl_sprintf("%s", m->str);   \
     entry.length = strlen((char*)(entry.entry));                        \
     FLAC__metadata_object_vorbiscomment_insert_comment(flac->vorbis_comment, \
                                                        num_comments++,  \

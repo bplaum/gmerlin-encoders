@@ -153,7 +153,7 @@ bgen_id3v1_t * bgen_id3v1_create(const gavl_dictionary_t * m)
   year = bg_metadata_get_year(m);
   if(year)
     {
-    tmp_string = bg_sprintf("%d", year);
+    tmp_string = gavl_sprintf("%d", year);
     if(strlen(tmp_string) == 4)
       {
       memcpy(&ret->data[YEAR_POS], tmp_string, 4);
