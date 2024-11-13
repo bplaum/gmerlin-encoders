@@ -744,7 +744,11 @@ static int open_video_encoder(bg_ffmpeg_video_stream_t * st)
 
 #define IO_BUFFER_SIZE 2048 // Too large values increase the latency
 
+#if LIBAVFORMAT_VERSION_MAJOR < 61
 static int io_write(void * opaque, uint8_t * buf, int size)
+#else
+static int io_write(void * opaque, const uint8_t * buf, int size)
+#endif
   {
   return gavl_io_write_data(opaque, buf, size);
   }
