@@ -26,6 +26,5 @@ SUBDIRS = \
 $(ogg_subdirs) \
 $(flac_subdirs) \
 $(lame_subdirs) \
-$(faac_subdirs) \
 $(ffmpeg_subdirs)
 
