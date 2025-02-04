@@ -1,1 +1,2 @@
-noinst_HEADERS = gmerlin_encoders.h bgflac.h bgshout.h
+noinst_HEADERS = gmerlin_encoders.h bgflac.h bgshout.h vorbiscomment.h
+
