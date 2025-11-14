@@ -31,7 +31,7 @@
 typedef struct bg_flac_s bg_flac_t;
 
 
-bg_flac_t * bg_flac_create();
+bg_flac_t * bg_flac_create(void);
 
 const bg_parameter_info_t * bg_flac_get_parameters(void);
   
