@@ -154,6 +154,8 @@ set_audio_parameter_oggvideo(void * data, int stream,
   {
   int i;
   const char * codec_name;
+  const gavl_dictionary_t * codec;
+  
   bg_ogg_encoder_t * enc = data;
   bg_ogg_stream_t * s = &enc->audio_streams[stream];
   
@@ -162,7 +164,8 @@ set_audio_parameter_oggvideo(void * data, int stream,
   if(!strcmp(name, "codec"))
     {
     i = 0;
-    codec_name = bg_multi_menu_get_selected_name(val);
+    codec = gavl_value_get_dictionary(val);
+    codec_name = gavl_dictionary_get_string(codec, BG_CFG_TAG_NAME);
     
     while(audio_codecs[i])
       {
@@ -173,7 +176,7 @@ set_audio_parameter_oggvideo(void * data, int stream,
         }
       i++;
       }
-    bg_cfg_section_apply(bg_multi_menu_get_selected(val),
+    bg_cfg_section_apply(codec,
                          NULL,
                          s->codec->set_parameter,
                          s->codec_priv);
@@ -186,6 +189,7 @@ set_video_parameter_oggvideo(void * data, int stream,
   {
   int i;
   const char * codec_name;
+  const gavl_dictionary_t * codec;
   bg_ogg_encoder_t * enc = data;
   bg_ogg_stream_t * s = &enc->video_streams[stream];
   
@@ -194,8 +198,8 @@ set_video_parameter_oggvideo(void * data, int stream,
   if(!strcmp(name, "codec"))
     {
     i = 0;
-
-    codec_name = bg_multi_menu_get_selected_name(val);
+    codec = gavl_value_get_dictionary(val);
+    codec_name = gavl_dictionary_get_string(codec, BG_CFG_TAG_NAME);
     
     while(video_codecs[i])
       {
@@ -206,7 +210,7 @@ set_video_parameter_oggvideo(void * data, int stream,
         }
       i++;
       }
-    bg_cfg_section_apply(bg_multi_menu_get_selected(val),
+    bg_cfg_section_apply(codec,
                          NULL,
                          s->codec->set_parameter,
                          s->codec_priv);

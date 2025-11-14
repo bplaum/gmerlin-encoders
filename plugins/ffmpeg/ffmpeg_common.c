@@ -475,8 +475,12 @@ void bg_ffmpeg_set_audio_parameter(void * data, int stream, const char * name,
   if(name && !strcmp(name, "codec") && !st->com.codec)
     {
     enum AVCodecID id;
-    const char * codec_name = bg_multi_menu_get_selected_name(v);
+    const gavl_dictionary_t * codec;
+    const char * codec_name;
 
+    codec = gavl_value_get_dictionary(v);
+    codec_name = gavl_dictionary_get_string(codec, BG_CFG_TAG_NAME);
+    
     if((id = bg_ffmpeg_find_audio_encoder(st->com.ffmpeg->format, codec_name)))
       {
       st->com.codec = bg_ffmpeg_codec_create(AVMEDIA_TYPE_AUDIO,
@@ -498,8 +502,9 @@ void bg_ffmpeg_set_video_parameter(void * data, int stream, const char * name,
   if(name && !strcmp(name, "codec") && !st->com.codec)
     {
     enum AVCodecID id;
-    const char * codec_name = bg_multi_menu_get_selected_name(v);
-
+    const gavl_dictionary_t * codec = gavl_value_get_dictionary(v);
+    const char * codec_name = gavl_dictionary_get_string(codec, BG_CFG_TAG_NAME);
+    
     if((id = bg_ffmpeg_find_video_encoder(st->com.ffmpeg->format, codec_name)))
       {
       st->com.codec = bg_ffmpeg_codec_create(AVMEDIA_TYPE_VIDEO,

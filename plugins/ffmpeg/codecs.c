@@ -831,7 +831,6 @@ static void create_codec_parameter(bg_parameter_info_t * parameter_info,
       parameter_info[0].multi_parameters_nc[i] =
         bg_parameter_info_copy_array(infos[i]->parameters);
     }
-  gavl_value_set_string(&parameter_info[0].val_default, infos[0]->name);
   bg_parameter_info_set_const_ptrs(&parameter_info[0]);
   }
 

@@ -161,8 +161,11 @@ void bg_ffmpeg_codec_set_parameter(bg_ffmpeg_codec_context_t * ctx,
   
   if(!strcmp(name, "codec"))
     {
-    const char * name = bg_multi_menu_get_selected_name(v);
+    const char * name;
+    const gavl_dictionary_t * codec = gavl_value_get_dictionary(v);
 
+    name = gavl_dictionary_get_string(codec, BG_CFG_TAG_NAME);
+    
     if(ctx->type == AVMEDIA_TYPE_VIDEO)
       ctx->id = bg_ffmpeg_find_video_encoder(ctx->format, name);
     else
@@ -176,7 +179,7 @@ void bg_ffmpeg_codec_set_parameter(bg_ffmpeg_codec_context_t * ctx,
       }
     find_encoder(ctx);
 
-    bg_cfg_section_apply(bg_multi_menu_get_selected(v),
+    bg_cfg_section_apply(codec,
                          NULL,
                          apply_func,
                          ctx);
