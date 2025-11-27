@@ -118,7 +118,7 @@ bg_ogg_encoder_open(void * data, const char * file,
       {
       FILE * f;
       
-      e->filename = bg_filename_ensure_extension(file, ext);
+      e->filename = gavl_filename_ensure_extension(file, ext);
       
       if(!bg_encoder_cb_create_output_file(e->cb, e->filename))
         return 0;

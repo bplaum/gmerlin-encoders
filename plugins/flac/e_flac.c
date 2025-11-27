@@ -391,7 +391,7 @@ static int open_flac(void * data, const char * filename,
   else
     {
     FILE * out;
-    flac->filename = bg_filename_ensure_extension(filename, "flac");
+    flac->filename = gavl_filename_ensure_extension(filename, "flac");
     if(!bg_encoder_cb_create_output_file(flac->cb, flac->filename))
       return 0;
     

@@ -218,7 +218,7 @@ static int open_lame(void * data,
   else
     {
     FILE * f;
-    lame->filename = bg_filename_ensure_extension(filename, "mp3");
+    lame->filename = gavl_filename_ensure_extension(filename, "mp3");
 
     if(!bg_encoder_cb_create_output_file(lame->cb, lame->filename))
       return 0;

@@ -254,7 +254,7 @@ static int ffmpeg_open(void * data, const char * filename,
     else
       {
       char * tmp_string =
-        bg_filename_ensure_extension(filename,
+        gavl_filename_ensure_extension(filename,
                                      priv->format->extension);
 
       if(!bg_encoder_cb_create_output_file(priv->cb, tmp_string))
