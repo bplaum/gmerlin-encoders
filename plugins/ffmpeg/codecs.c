@@ -1127,10 +1127,10 @@ static const enum_t mb_decision[] =
 
 static const enum_t faac_profile[] =
   {
-    { "main", FF_PROFILE_AAC_MAIN },
-    { "lc",   FF_PROFILE_AAC_LOW  },
-    { "ssr",  FF_PROFILE_AAC_SSR  },
-    { "ltp",  FF_PROFILE_AAC_LTP  }
+    { "main", AV_PROFILE_AAC_MAIN },
+    { "lc",   AV_PROFILE_AAC_LOW  },
+    { "ssr",  AV_PROFILE_AAC_SSR  },
+    { "ltp",  AV_PROFILE_AAC_LTP  }
   };
 
 #define PARAM_ENUM(n, var, arr) \
