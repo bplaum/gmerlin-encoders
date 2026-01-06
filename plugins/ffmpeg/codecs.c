@@ -1125,12 +1125,20 @@ static const enum_t mb_decision[] =
     { "Rate distoration",     FF_MB_DECISION_RD }
   };
 
+
 static const enum_t faac_profile[] =
   {
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(62, 0, 0)
     { "main", FF_PROFILE_AAC_MAIN },
     { "lc",   FF_PROFILE_AAC_LOW  },
     { "ssr",  FF_PROFILE_AAC_SSR  },
     { "ltp",  FF_PROFILE_AAC_LTP  }
+#else
+    { "main", AV_PROFILE_AAC_MAIN },
+    { "lc",   AV_PROFILE_AAC_LOW  },
+    { "ssr",  AV_PROFILE_AAC_SSR  },
+    { "ltp",  AV_PROFILE_AAC_LTP  }
+#endif
   };
 
 #define PARAM_ENUM(n, var, arr) \
