@@ -649,7 +649,7 @@ static int set_video_pass_theora(void * data, int pass, int total_passes,
     }
   else
     {
-    if(!(bg_read_file(stats_file, &theora->stats)))
+    if(!(gavl_read_file(stats_file, &theora->stats)))
       {
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "couldn't open stats file %s", stats_file);
