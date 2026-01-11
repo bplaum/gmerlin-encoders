@@ -40,6 +40,13 @@
 #define FLAG_ERROR       (1<<1)
 #define FLAG_FLUSHED     (1<<2)
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
+/* New API */
+#define NEW_CONFIG_TYPES_API
+#else
+/* Alte API - verwende codec->ch_layouts etc. direkt */
+#endif
+
 
 static void 
 get_pixelformat_converter(bg_ffmpeg_codec_context_t * ctx, enum AVPixelFormat fmt,
@@ -401,15 +408,27 @@ static int try_channel_layout(const AVChannelLayout * ch_layout,
                               const AVCodec * codec)
   {
   int i = 0;
+
+  const AVChannelLayout * ch_layouts;
+
+#ifdef NEW_CONFIG_TYPES_API
+  int ret;
+  ret = avcodec_get_supported_config(NULL, codec, AV_CODEC_CONFIG_CHANNEL_LAYOUT,
+                                     0, (const void **)&ch_layouts, NULL);
+  if(ret < 0)
+    return 0;
+#else
+  ch_layouts = codec->ch_layouts;
+#endif
   
-  if(!codec->ch_layouts)
+  if(!ch_layouts)
     return 1; // Accept everything
   
-  while(codec->ch_layouts[i].nb_channels)
+  while(ch_layouts[i].nb_channels)
     {
-    if((codec->ch_layouts[i].nb_channels == ch_layout->nb_channels) &&
-       (codec->ch_layouts[i].order == AV_CHANNEL_ORDER_NATIVE) &&
-       (codec->ch_layouts[i].u.mask == ch_layout->u.mask))
+    if((ch_layouts[i].nb_channels == ch_layout->nb_channels) &&
+       (ch_layouts[i].order == AV_CHANNEL_ORDER_NATIVE) &&
+       (ch_layouts[i].u.mask == ch_layout->u.mask))
       return 1;
     i++;
     }
@@ -481,7 +500,10 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   //    return NULL;
 
   gavl_audio_format_t * fmt = gavl_stream_get_audio_format_nc(s);
-  
+#ifdef NEW_CONFIG_TYPES_API
+  const enum AVSampleFormat *sample_fmts;
+  int ret;
+#endif
   /* Set format for codec */
 
   if(!ctx->codec)
@@ -491,7 +513,15 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
     return NULL;
   
   /* Sample format */
+#ifdef NEW_CONFIG_TYPES_API
+  ret = avcodec_get_supported_config(ctx->avctx, NULL, AV_CODEC_CONFIG_CHANNEL_LAYOUT,
+                                     0, (const void **)&sample_fmts, NULL);
+  if(ret < 0)
+    return NULL;
+#else
   ctx->avctx->sample_fmt = ctx->codec->sample_fmts[0];
+#endif
+  
   fmt->sample_format =
     bg_sample_format_ffmpeg_2_gavl(ctx->avctx->sample_fmt, &fmt->interleave_mode);
 
@@ -812,6 +842,11 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
   //  if(!find_encoder(ctx))
   //    return NULL;
 
+#ifdef NEW_CONFIG_TYPES_API  
+  const enum AVPixelFormat *pix_fmts;
+  int ret;
+#endif
+    
   fmt = gavl_stream_get_video_format_nc(s);
   
   if(!ctx->codec)
@@ -827,10 +862,22 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
   
   ctx->avctx->codec_type = AVMEDIA_TYPE_VIDEO;
   ctx->avctx->codec_id = ctx->id;
+
+#ifdef NEW_CONFIG_TYPES_API  
+  ret = avcodec_get_supported_config(ctx->avctx, NULL, AV_CODEC_CONFIG_PIX_FORMAT,
+                                     0, (const void **)&pix_fmts, NULL);
+  if(ret < 0)
+    return NULL;
+
+  bg_ffmpeg_choose_pixelformat(pix_fmts,
+                               &ctx->avctx->pix_fmt,
+                               &fmt->pixelformat, &do_convert);
   
+#else  
   bg_ffmpeg_choose_pixelformat(ctx->codec->pix_fmts,
                                &ctx->avctx->pix_fmt,
                                &fmt->pixelformat, &do_convert);
+#endif
   
   /* Framerate */
   if(info->flags & FLAG_CONSTANT_FRAMERATE ||

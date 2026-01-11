@@ -27,6 +27,11 @@
 #include <gmerlin/plugin.h>
 #include <gmerlin/pluginfuncs.h>
 
+#if LIBAVCODEC_VERSION_MAJOR >= 61
+#include <libavcodec/codec.h>
+#endif
+
+
 #ifdef HAVE_LIBAVCORE_AVCORE_H
 #include <libavcore/avcore.h>
 #endif
