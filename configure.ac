@@ -1,4 +1,4 @@
-AC_INIT([gmerlin-encoders], [2.0.0pre1])
+AC_INIT([gmerlin-encoders], [2.0.0])
 AC_CONFIG_SRCDIR([include/gmerlin_encoders.h])
 AM_INIT_AUTOMAKE
 
