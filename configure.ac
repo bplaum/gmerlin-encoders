@@ -1,4 +1,4 @@
-AC_INIT([gmerlin-encoders], [2.0.0])
+AC_INIT([gmerlin-encoders], [2.1.0])
 AC_CONFIG_SRCDIR([include/gmerlin_encoders.h])
 AM_INIT_AUTOMAKE
 
@@ -23,7 +23,7 @@ dnl
 dnl Required libraries
 dnl
 
-GMERLIN_REQUIRED="2.0.0"
+GMERLIN_REQUIRED="2.1.0"
 PKG_CHECK_MODULES(GMERLIN, gmerlin >= $GMERLIN_REQUIRED, , AC_MSG_ERROR("gmerlin not found"))
 
 gmerlin_plugindir='$(libdir)/gmerlin/plugins'

@@ -30,6 +30,7 @@
 #include <gavl/metadata.h>
 #include <gavl/metatags.h>
 #include <gavl/numptr.h>
+#include <gavl/io.h>
 
 #include <vorbiscomment.h>
 
