@@ -4,13 +4,6 @@ AM_CPPFLAGS = -I$(top_srcdir)/include
 
 AM_LDFLAGS = @GMERLIN_PLUGIN_LDFLAGS@ -avoid-version -module
 
-if HAVE_THEORAENC
-theoraenc_plugins = c_theoraenc.la
-theora_sources = theora.c
-else
-theoraenc_plugins =
-theora_sources = 
-endif
 
 if HAVE_OPUS
 opus_plugins = e_opus.la c_opusenc.la
@@ -29,19 +22,12 @@ flac_plugins =
 flac_sources =
 endif
 
-if HAVE_OGG_VIDEO
-oggvideo_plugins = e_oggvideo.la
-else
-oggvideo_plugins =
-endif
 
 gmerlin_plugin_LTLIBRARIES = \
 e_vorbis.la \
 c_vorbisenc.la \
-$(theoraenc_plugins) \
 $(opus_plugins) \
-$(flac_plugins) \
-$(oggvideo_plugins)
+$(flac_plugins)
 
 AM_CFLAGS = -DLOCALE_DIR=\"$(localedir)\"
 
@@ -49,47 +35,12 @@ e_vorbis_la_CFLAGS = @VORBISENC_CFLAGS@ $(AM_CFLAGS)
 e_vorbis_la_SOURCES = e_vorbis.c vorbis.c ogg_common.c
 e_vorbis_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @VORBISENC_LIBS@
 
-e_oggvideo_la_CFLAGS = \
-@THEORAENC_CFLAGS@ \
-@VORBISENC_CFLAGS@ \
-@FLAC_CFLAGS@ \
-@OPUS_CFLAGS@ \
-$(AM_CFLAGS)
-
-e_oggvideo_la_SOURCES = \
-e_oggvideo.c \
-vorbis.c \
-$(flac_sources) \
-$(opus_sources) \
-$(theora_sources) \
-ogg_common.c
-
-e_oggvideo_la_LIBADD = \
-$(top_builddir)/lib/libgmerlin_encoders.la \
-@VORBISENC_LIBS@ \
-@THEORAENC_LIBS@ \
-@OPUS_LIBS@ \
-$(bgflac_libs)
-
 e_opus_la_CFLAGS = @OPUS_CFLAGS@ $(AM_CFLAGS)
 e_opus_la_SOURCES = e_opus.c opus.c ogg_common.c
 e_opus_la_LIBADD = $(top_builddir)/lib/libgmerlin_encoders.la @OPUS_LIBS@ @OGG_LIBS@ 
 
 
 noinst_HEADERS = ogg_common.h
-
-c_theoraenc_la_CFLAGS = \
-@THEORAENC_CFLAGS@ \
-$(AM_CFLAGS)
-
-c_theoraenc_la_SOURCES = \
-theora.c \
-c_theoraenc.c \
-ogg_common.c
-
-c_theoraenc_la_LIBADD = \
-$(top_builddir)/lib/libgmerlin_encoders.la \
-@THEORAENC_LIBS@
 
 c_vorbisenc_la_CFLAGS = \
 @VORBISENC_CFLAGS@ $(AM_CFLAGS)

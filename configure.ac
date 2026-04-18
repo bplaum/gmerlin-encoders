@@ -53,11 +53,6 @@ dnl
 
 GMERLIN_CHECK_VORBIS
 
-dnl
-dnl Theora
-dnl
-
-GMERLIN_CHECK_THEORAENC
 
 dnl
 dnl OPUS
@@ -89,12 +84,6 @@ dnl
 
 GMERLIN_CHECK_AVFORMAT
 
-dnl
-dnl Check if we have at least one video encoder
-dnl available
-dnl 
-
-AM_CONDITIONAL(HAVE_OGG_VIDEO, test "x$have_theoraenc" = "xtrue")
 
 dnl
 dnl CFLAGS
@@ -159,13 +148,6 @@ if test "x$have_vorbis" = "xtrue"; then
 echo "Found (CFLAGS=$VORBIS_CFLAGS LIBS=$VORBIS_LIBS)"
 else
 echo "Missing (Go to: http://www.vorbis.com/)"
-fi
-
-echo -n "theoraenc:    "
-if test "x$have_theoraenc" = "xtrue"; then
-echo "Found (CFLAGS=$THEORAENC_CFLAGS LIBS=$THEORAENC_LIBS)"
-else
-echo "Missing (Go to: http://www.theora.org/)"
 fi
 
 echo -n "opus:         "
