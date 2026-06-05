@@ -33,7 +33,10 @@ e_asf.la \
 e_mpegts.la \
 e_matroska.la \
 e_webm.la \
-e_mp4.la
+e_mp4.la \
+e_rtp.la
+
+
 
 common_sources = ffmpeg_common.c codecs.c codec.c
 codec_sources = codecs.c codec.c
@@ -42,6 +45,8 @@ LIBS = @AVFORMAT_LIBS@
 
 e_mpeg1video_la_SOURCES = e_mpeg1video.c $(common_sources)
 e_mpeg2video_la_SOURCES = e_mpeg2video.c $(common_sources)
+
+e_rtp_la_SOURCES = e_rtp.c $(common_sources)
 
 e_au_la_SOURCES = e_au.c $(common_sources)
 

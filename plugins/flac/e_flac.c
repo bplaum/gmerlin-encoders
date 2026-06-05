@@ -696,7 +696,7 @@ const bg_encoder_plugin_t the_plugin =
       .name =            "e_flac",       /* Unique short name */
       .long_name =       TRS("Flac"),
       .description =     TRS("Encoder for flac files. Based on libflac (http://flac.sourceforge.net)"),
-      .type =            BG_PLUGIN_ENCODER_AUDIO,
+      .type =            BG_PLUGIN_ENCODER,
       .flags =           BG_PLUGIN_FILE,
       .priority =        5,
       
@@ -708,7 +708,7 @@ const bg_encoder_plugin_t the_plugin =
 
     },
     .max_audio_streams =   1,
-    .max_video_streams =   0,
+    .min_audio_streams =   1,
     
     .set_callbacks =       set_callbacks_flac,
     

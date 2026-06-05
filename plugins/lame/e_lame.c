@@ -412,7 +412,7 @@ const bg_encoder_plugin_t the_plugin =
       .name =            "e_mp3",       /* Unique short name */
       .long_name =       TRS("MP3"),
       .description =     TRS("Encoder for mp3 files. Based on lame (http://www.mp3dev.org). Supports CBR, ABR and VBR as well as ID3V1 and ID3V2 tags."),
-      .type =            BG_PLUGIN_ENCODER_AUDIO,
+      .type =            BG_PLUGIN_ENCODER,
       .flags =           BG_PLUGIN_FILE | BG_PLUGIN_PIPE | BG_PLUGIN_GAVF_IO,
       .priority =        5,
       .create =            create_lame,
@@ -422,7 +422,7 @@ const bg_encoder_plugin_t the_plugin =
       .get_extensions = get_extensions_lame,  
     },
     .max_audio_streams =   1,
-    .max_video_streams =   0,
+    .min_audio_streams =   1,
     
     .set_callbacks =       set_callbacks_lame,
     

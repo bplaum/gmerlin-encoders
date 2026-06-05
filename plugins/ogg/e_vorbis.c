@@ -100,7 +100,7 @@ const bg_encoder_plugin_t the_plugin =
       .name =            "e_vorbis",       /* Unique short name */
       .long_name =       TRS("Ogg Vorbis"),
       .description =     TRS("Encoder for Vorbis files"),
-      .type =            BG_PLUGIN_ENCODER_AUDIO,
+      .type =            BG_PLUGIN_ENCODER,
       .flags =           BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =        5,
       .create =            bg_ogg_encoder_create,
@@ -108,6 +108,7 @@ const bg_encoder_plugin_t the_plugin =
       .get_extensions = get_extensions_vorbis,  
     },
     .max_audio_streams =   1,
+    .min_audio_streams =   1,
     .max_video_streams =   0,
 
     .set_callbacks =       bg_ogg_encoder_set_callbacks,

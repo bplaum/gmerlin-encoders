@@ -40,12 +40,12 @@
 #define guess_format(a, b, c) av_guess_format(a, b, c)
 #endif
 
-
 #define FLAG_CONSTANT_FRAMERATE (1<<0)
 #define FLAG_INTRA_ONLY         (1<<1)
 #define FLAG_B_FRAMES           (1<<2)
 #define FLAG_PIPE               (1<<3) // Format can be written savely to pipes
 #define FLAG_EXTRADATA          (1<<4) // Encoder has extradata
+#define FLAG_SEPARATE           (1<<5) // Separate contexts
 
 typedef struct
   {
@@ -65,9 +65,12 @@ typedef struct
   const char * ffmpeg_name;
 
   const char * extension;
+  const char * protocol;
   
   int max_audio_streams;
   int max_video_streams;
+  int min_audio_streams;
+  int min_video_streams;
   
   const enum AVCodecID * audio_codecs;
   const enum AVCodecID * video_codecs;
@@ -217,11 +220,6 @@ void bg_ffmpeg_codec_set_parameter(bg_ffmpeg_codec_context_t * ctx,
                                    const char * name,
                                    const gavl_value_t * val);
 
-int bg_ffmpeg_codec_set_video_pass(bg_ffmpeg_codec_context_t * ctx,
-                                   int pass,
-                                   int total_passes,
-                                   const char * stats_filename);
-
 
 gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
                                                gavl_dictionary_t * s);
@@ -247,6 +245,7 @@ typedef struct
   {
   AVStream * stream;
   AVPacket * pkt;
+  AVFormatContext * fmtctx;
   
   bg_ffmpeg_codec_context_t * codec;
   
@@ -261,30 +260,19 @@ typedef struct
   
   gavl_dictionary_t s;
   gavl_dictionary_t * m;
-  } bg_ffmpeg_stream_common_t;
 
-typedef struct
-  {
-  bg_ffmpeg_stream_common_t com;
-  gavl_audio_sink_t * sink;
-  gavl_audio_format_t * format;
+  gavl_audio_sink_t * asink;
+  gavl_audio_format_t * aformat;
 
-  } bg_ffmpeg_audio_stream_t;
+  gavl_video_sink_t * vsink;
+  gavl_video_format_t * vformat;
 
-typedef struct
-  {
-  bg_ffmpeg_stream_common_t com;
-  gavl_video_sink_t * sink;
-  gavl_video_format_t * format;
-  int64_t dts;
-  } bg_ffmpeg_video_stream_t;
+  int64_t dts; /* For video streams */
+  AVRational time_base;  /* For text streams */
 
-typedef struct
-  {
-  bg_ffmpeg_stream_common_t com;
-  AVRational time_base;
-  AVPacket * pkt;
-  } bg_ffmpeg_text_stream_t;
+  
+  } bg_ffmpeg_stream_t;
+
 
 struct ffmpeg_priv_s
   {
@@ -292,11 +280,11 @@ struct ffmpeg_priv_s
   int num_video_streams;
   int num_text_streams;
   
-  bg_ffmpeg_audio_stream_t * audio_streams;
-  bg_ffmpeg_video_stream_t * video_streams;
-  bg_ffmpeg_text_stream_t * text_streams;
+  bg_ffmpeg_stream_t * audio_streams;
+  bg_ffmpeg_stream_t * video_streams;
+  bg_ffmpeg_stream_t * text_streams;
   
-  AVFormatContext * ctx;
+  AVFormatContext * fmtctx;
   
   bg_parameter_info_t * audio_parameters;
   bg_parameter_info_t * video_parameters;
@@ -307,13 +295,14 @@ struct ffmpeg_priv_s
   int initialized;
   int got_error;
 
-  // Needed when we write compressed video packets with B-frames
-  int need_pts_offset;
-  
   bg_encoder_callbacks_t * cb;
   
   gavl_io_t * io;
   unsigned char * io_buffer;
+
+  char * rtp_base_address;
+  int rtp_port;
+  
   };
 
 extern const bg_encoder_framerate_t

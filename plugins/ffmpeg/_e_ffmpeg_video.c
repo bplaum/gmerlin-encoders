@@ -71,7 +71,7 @@ const bg_encoder_plugin_t the_plugin =
       .name =           "e_" NAME,       /* Unique short name */
       .long_name =      format.label,
       .description =    TRS("Based on ffmpeg (http://www.ffmpeg.org)"),
-      .type =           BG_PLUGIN_ENCODER_VIDEO,
+      .type =           BG_PLUGIN_ENCODER,
       .flags =          BG_PLUGIN_FILE | BG_PLUGIN_PIPE,
       .priority =       5,
       .create =         create_ffmpeg,
@@ -83,6 +83,7 @@ const bg_encoder_plugin_t the_plugin =
     },
     
     .max_video_streams =         1,
+    .min_video_streams =         1,
     
     .get_video_parameters = bg_ffmpeg_get_video_parameters,
 
@@ -93,7 +94,6 @@ const bg_encoder_plugin_t the_plugin =
     
     
     .add_video_stream =     bg_ffmpeg_add_video_stream,
-    .set_video_pass =       bg_ffmpeg_set_video_pass,
     .set_video_parameter =  bg_ffmpeg_set_video_parameter,
     
     .get_video_sink =       bg_ffmpeg_get_video_sink,

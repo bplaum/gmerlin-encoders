@@ -644,20 +644,6 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   return ctx->asink;
   }
 
-/*
- *  Video
- */
-
-int bg_ffmpeg_codec_set_video_pass(bg_ffmpeg_codec_context_t * ctx,
-                                   int pass,
-                                   int total_passes,
-                                   const char * stats_filename)
-  {
-  ctx->pass           = pass;
-  ctx->total_passes   = total_passes;
-  ctx->stats_filename = gavl_strrep(ctx->stats_filename, stats_filename);
-  return 1;
-  }
 
 static int flush_video(bg_ffmpeg_codec_context_t * ctx,
                        AVFrame * frame)
