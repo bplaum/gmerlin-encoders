@@ -973,11 +973,11 @@ int bg_ffmpeg_close(void * data, int do_delete)
     }
   for(i = 0; i < priv->num_video_streams; i++)
     {
-    cleanup_stream(&priv->audio_streams[i]);
+    cleanup_stream(&priv->video_streams[i]);
     }
   for(i = 0; i < priv->num_text_streams; i++)
     {
-    cleanup_stream(&priv->audio_streams[i]);
+    cleanup_stream(&priv->text_streams[i]);
     }
   
   if(priv->fmtctx)
