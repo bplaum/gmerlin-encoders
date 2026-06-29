@@ -243,15 +243,16 @@ static void set_chapters(AVFormatContext * ctx,
   }
 
 static char*ffmpeg_string(char*instr)
-{
-   size_t len = strlen(instr);
-   char*outstr = av_malloc(len+1);
-   if(outstr) {
-      strcpy(outstr, instr);
-      outstr[len] = 0;
-   }
-   return outstr;
-}
+  {
+  size_t len = strlen(instr);
+  char*outstr = av_malloc(len+1);
+  if(outstr)
+    {
+    strcpy(outstr, instr);
+    outstr[len] = 0;
+    }
+  return outstr;
+  }
 
 static int ffmpeg_open(void * data, const char * filename,
                        gavl_io_t * io,
@@ -435,7 +436,6 @@ write_text_packet_func(void * data, gavl_packet_t * p)
   {
   bg_ffmpeg_stream_t * st = data;
 
-  ffmpeg_priv_t * priv = st->ffmpeg;
 
 #ifdef DUMP_TEXT_PACKETS  
   bg_dprintf("write_text_packet\n");
@@ -460,10 +460,8 @@ write_text_packet_func(void * data, gavl_packet_t * p)
   st->pkt->stream_index = st->stream->index;
   
   if(!write_frame(st))
-    {
-    priv->got_error = 1;
     return GAVL_SINK_ERROR;
-    }
+
   st->pkt->data = NULL;
   return GAVL_SINK_OK;
   }
@@ -587,7 +585,6 @@ static gavl_sink_status_t
 write_video_packet_func(void * priv, gavl_packet_t * packet)
   {
   bg_ffmpeg_stream_t * st = priv;
-  ffmpeg_priv_t * f = st->ffmpeg;
 
 #ifdef DUMP_VIDEO_PACKETS  
   bg_dprintf("\nwrite_video_packet\n");
@@ -601,22 +598,27 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
   st->pkt->size = packet->buf.len;
 
   st->pkt->pts      = rescale_video_timestamp(st, packet->pts);
-  st->pkt->dts      = rescale_video_timestamp(st, packet->dts);
   
   st->pkt->duration = rescale_video_timestamp(st, packet->duration);
   
   // fprintf(stderr, "Video PTS: %"PRId64" Duration: %"PRId64"\n", st->pkt->pts, st->pkt->duration);
 
-  if(st->ci.flags & GAVL_COMPRESSION_HAS_B_FRAMES)
+  if(packet->dts == GAVL_TIME_UNDEFINED)
     {
-    if(st->dts == GAVL_TIME_UNDEFINED)
-      st->dts = packet->pts - 3*packet->duration;
+    if(st->ci.flags & GAVL_COMPRESSION_HAS_B_FRAMES)
+      {
+      if(st->dts == GAVL_TIME_UNDEFINED)
+        st->dts = packet->pts - 3*packet->duration;
     
-    st->pkt->dts= rescale_video_timestamp(st, st->dts);
-    st->dts += packet->duration;
+      st->pkt->dts= rescale_video_timestamp(st, st->dts);
+      st->dts += packet->duration;
+      }
+    else
+      st->pkt->dts = st->pkt->pts;
     }
   else
-    st->pkt->dts = st->pkt->pts;
+    st->pkt->dts      = rescale_video_timestamp(st, packet->dts);
+  
   
   if(packet->flags & GAVL_PACKET_KEYFRAME)  
     st->pkt->flags |= AV_PKT_FLAG_KEY;
@@ -627,10 +629,8 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
   
   /* write the compressed frame in the media file */
   if(!write_frame(st))
-    {
-    f->got_error = 1;
     return GAVL_SINK_ERROR;
-    }
+
   st->pkt->data = NULL;
   return GAVL_SINK_OK;
   }
@@ -640,10 +640,8 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
 static gavl_sink_status_t
 write_audio_packet_func(void * data, gavl_packet_t * packet)
   {
-  ffmpeg_priv_t * f;
   bg_ffmpeg_stream_t * st = data;
   AVRational time_base;
-  f = st->ffmpeg;
 
 #ifdef DUMP_AUDIO_PACKETS  
   bg_dprintf("write_audio_packet\n");
@@ -685,10 +683,8 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   
   /* write the compressed frame in the media file */
   if(!write_frame(st))
-    {
-    f->got_error = 1;
     return GAVL_SINK_ERROR;
-    }
+  
   st->pkt->data = NULL;
   return GAVL_SINK_OK;
   }
@@ -705,6 +701,9 @@ static int open_audio_encoder(bg_ffmpeg_stream_t * st)
 
     if(st->ci.flags & GAVL_COMPRESSION_SBR)
       st->stream->codecpar->sample_rate /= 2;
+
+    if(gavl_compression_constant_frame_samples(st->ci.id))
+      st->stream->codecpar->frame_size = st->aformat->samples_per_frame;
     
     return 1;
     }
@@ -845,7 +844,7 @@ int bg_ffmpeg_start(void * data)
     
     }
   
-  priv->initialized = 1;
+  priv->flags |= FLAG_INITIALIZED;
   return 1;
   }
 
@@ -880,7 +879,7 @@ static void cleanup_stream(bg_ffmpeg_stream_t * com)
   {
   if(com->fmtctx)
     {
-    if(com->ffmpeg->initialized)
+    if(com->ffmpeg->flags & FLAG_INITIALIZED)
       {
       av_write_trailer(com->fmtctx);
       avio_close(com->fmtctx->pb);
@@ -951,7 +950,7 @@ int bg_ffmpeg_close(void * data, int do_delete)
       bg_ffmpeg_codec_flush(st->codec);
     }
   
-  if(priv->initialized)
+  if(priv->flags & FLAG_INITIALIZED)
     {
     if(priv->fmtctx)
       {

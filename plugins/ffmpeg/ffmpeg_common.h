@@ -46,6 +46,12 @@
 #define FLAG_PIPE               (1<<3) // Format can be written savely to pipes
 #define FLAG_EXTRADATA          (1<<4) // Encoder has extradata
 #define FLAG_SEPARATE           (1<<5) // Separate contexts
+#define FLAG_INITIALIZED        (1<<6) // Contexts are initialized (need av_write_trailer)
+#define FLAG_FLUSHED            (1<<7)
+#define FLAG_ERROR              (1<<8)
+
+#define COUNT_VIDEO_FRAMES
+#define COUNT_FRAMES
 
 typedef struct
   {
@@ -146,12 +152,6 @@ struct bg_ffmpeg_codec_context_s
   
   int type;
   
-  /* Multipass stuff */
-
-  char * stats_filename;
-  int pass;
-  int total_passes;
-  FILE * stats_file;
   
   /* Only non-null within the format writer */
   const ffmpeg_format_info_t * format;
@@ -292,8 +292,8 @@ struct ffmpeg_priv_s
   
   const ffmpeg_format_info_t * format;
 
-  int initialized;
-  int got_error;
+  int flags;
+  
 
   bg_encoder_callbacks_t * cb;
   

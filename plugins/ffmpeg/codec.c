@@ -36,9 +36,8 @@
  *  Standalone codecs
  */
 
-#define FLAG_INITIALIZED (1<<0)
-#define FLAG_ERROR       (1<<1)
-#define FLAG_FLUSHED     (1<<2)
+// #define FLAG_INITIALIZED (1<<0)
+// #define FLAG_ERROR       (1<<1)
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(61, 13, 100)
 /* New API */
@@ -680,13 +679,12 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
 
     ctx->gp.pts = ctx->pkt->pts;
     ctx->gp.dts = ctx->pkt->dts;
+
     
 #if 0
     ctx->gp.duration = ctx->pkt->duration;
     ctx->gp.dts = ctx->pkt->dts;
 
-    fprintf(stderr, "PTS: %"PRId64" DTS: %"PRId64" DUR: %"PRId64"\n",
-            ctx->gp.pts, ctx->gp.dts, ctx->gp.duration);
 #endif
     
     if(ctx->pkt->flags & AV_PKT_FLAG_KEY)
@@ -743,10 +741,6 @@ static int flush_video(bg_ffmpeg_codec_context_t * ctx,
       gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN,
              "Writing packet failed");
       }
-    /* Write stats */
-    if((ctx->pass == 1) && ctx->avctx->stats_out && ctx->stats_file)
-      fprintf(ctx->stats_file, "%s", ctx->avctx->stats_out);
-
     ctx->gp.buf.buf = NULL;
     }
   
@@ -772,6 +766,7 @@ write_video_func(void * data, gavl_video_frame_t * frame)
   ctx->frame->pts = frame->timestamp;
   if(ctx->vfmt.framerate_mode == GAVL_FRAMERATE_CONSTANT)
     ctx->frame->pts /= ctx->vfmt.frame_duration;
+  
   
   ctx->frame->data[0]     = frame->planes[0];
   ctx->frame->data[1]     = frame->planes[1];
@@ -888,40 +883,6 @@ gavl_video_sink_t * bg_ffmpeg_codec_open_video(bg_ffmpeg_codec_context_t * ctx,
     ctx->avctx->time_base.num = 1;
     }
   
-  /* Set up multipass encoding */
-  
-  if(ctx->total_passes)
-    {
-    int stats_len;
-    
-    if(ctx->pass == 1)
-      {
-      ctx->stats_file = fopen(ctx->stats_filename, "w");
-      ctx->avctx->flags |= AV_CODEC_FLAG_PASS1;
-      }
-    else if(ctx->pass == ctx->total_passes)
-      {
-      ctx->stats_file = fopen(ctx->stats_filename, "r");
-      fseek(ctx->stats_file, 0, SEEK_END);
-      stats_len = ftell(ctx->stats_file);
-      fseek(ctx->stats_file, 0, SEEK_SET);
-      
-      ctx->avctx->stats_in = av_malloc(stats_len + 1);
-      if(fread(ctx->avctx->stats_in, 1,
-               stats_len, ctx->stats_file) < stats_len)
-        {
-        av_free(ctx->avctx->stats_in);
-        ctx->avctx->stats_in = NULL;
-        }
-      else
-        ctx->avctx->stats_in[stats_len] = '\0';
-      
-      fclose(ctx->stats_file);
-      ctx->stats_file = NULL;
-      
-      ctx->avctx->flags |= AV_CODEC_FLAG_PASS2;
-      }
-    }
 
   
   /* Decide whether we need a global header */
@@ -1031,12 +992,6 @@ void bg_ffmpeg_codec_destroy(bg_ffmpeg_codec_context_t * ctx)
   if(ctx->pkt)
     av_packet_free(&ctx->pkt);
   
-  if(ctx->stats_filename)
-    free(ctx->stats_filename);
-  
-  if(ctx->stats_file)
-    fclose(ctx->stats_file);
-
   /* Prevent the buffer from being free()d */
   gavl_buffer_init(&ctx->gp.buf);
   gavl_packet_free(&ctx->gp);
