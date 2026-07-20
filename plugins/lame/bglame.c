@@ -460,6 +460,7 @@ void bg_lame_set_parameter(bg_lame_t * lame,
   
   else if(!strcmp(name, "cbr_bitrate"))
     {
+    fprintf(stderr, "Setting lame bitrate: %d\n", v->v.i);
     lame->cbr_bitrate = v->v.i;
     }
   else if(!strcmp(name, "vbr_quality"))

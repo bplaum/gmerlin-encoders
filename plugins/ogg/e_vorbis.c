@@ -58,13 +58,6 @@ open_vorbis(void * data, const char * file,
                              "ogg");
   }
 
-static int
-open_io_vorbis(void * data, gavl_io_t * io,
-               const gavl_dictionary_t * metadata)
-  {
-  return bg_ogg_encoder_open(data, NULL, io, metadata,
-                             "ogg");
-  }
 
 static int writes_compressed_audio_vorbis(void* data,
                                           const gavl_audio_format_t * format,
@@ -114,8 +107,6 @@ const bg_encoder_plugin_t the_plugin =
     .set_callbacks =       bg_ogg_encoder_set_callbacks,
     .writes_compressed_audio = writes_compressed_audio_vorbis,
     .open =                open_vorbis,
-    .open_io =             open_io_vorbis,
-
     
     .get_audio_parameters =    get_audio_parameters_vorbis,
 

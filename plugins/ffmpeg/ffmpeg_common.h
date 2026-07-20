@@ -300,9 +300,11 @@ struct ffmpeg_priv_s
   gavl_io_t * io;
   unsigned char * io_buffer;
 
+  /* RTP Stuff */
+  
   char * rtp_base_address;
   int rtp_port;
-  
+  bg_msg_sink_t * msg_sink;
   };
 
 extern const bg_encoder_framerate_t
@@ -323,9 +325,6 @@ void bg_ffmpeg_set_parameter(void * data, const char * name,
 
 int bg_ffmpeg_open(void * data, const char * filename,
                    const gavl_dictionary_t * metadata);
-
-int bg_ffmpeg_open_io(void * data, gavl_io_t * io,
-                      const gavl_dictionary_t * metadata);
 
 
 const bg_parameter_info_t * bg_ffmpeg_get_audio_parameters(void * data);

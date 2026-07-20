@@ -65,6 +65,30 @@
                    "576", "640", NULL } \
   },
 
+#define ENCODE_PARAM_AAC \
+  {                                      \
+    .name =      "ff_bit_rate_audio",        \
+    .long_name = TRS("Bit rate (kbps)"),        \
+    .type =      BG_PARAMETER_INT,                 \
+    .val_default = GAVL_VALUE_INIT_INT(128),       \
+    .val_min = GAVL_VALUE_INIT_INT(32),             \
+    .val_default = GAVL_VALUE_INIT_INT(256),       \
+  },                                               \
+  {                                                \
+    .name =      "aac_profile",                   \
+    .long_name = TRS("Profile"),                   \
+    .type =      BG_PARAMETER_STRINGLIST,          \
+    .val_default = GAVL_VALUE_INIT_STRING("low"),   \
+    .multi_names = (char const *[]){"low",        \
+                                    "mpeg2_low",          \
+                                    "main",         \
+                                    (char *)0},         \
+    .multi_labels = (char const *[]){TRS("Low"),        \
+                                     TRS("MPEG-2 Low"),         \
+                                     TRS("Main"),        \
+                                     (char *)0 },       \
+  },
+
 /*
  *  bit_rate can also be set to 1 (open), 2 (variable), 3 (lossless)
  */
@@ -94,38 +118,6 @@
     .multi_names = (char const *[]){ "24", "48", "64", "96", "128", NULL } \
   },
 
-#if 0
-static const bg_parameter_info_t parameters_libfaac[] =
-  {
-    {
-      .name =      "faac_profile",
-      .long_name = TRS("Profile"),
-      .type =      BG_PARAMETER_STRINGLIST,
-      .val_default = GAVL_VALUE_INIT_STRING("lc"),
-      .multi_names = (char const *[]){"main",
-                                      "lc",
-                                      "ssr",
-                                      "ltp",
-                                      (char *)0},
-      .multi_labels = (char const *[]){TRS("Main"),
-                                       TRS("LC"),
-                                       TRS("SSR"),
-                                       TRS("LTP"),
-                                       (char *)0 },
-    },
-    PARAM_BITRATE_AUDIO,
-    {
-      .name =        "faac_quality",
-      .long_name =   TRS("Quality"),
-      .type =        BG_PARAMETER_SLIDER_INT,
-      .val_min =     GAVL_VALUE_INIT_INT(10),
-      .val_max =     GAVL_VALUE_INIT_INT(500),
-      .val_default = GAVL_VALUE_INIT_INT(100),
-      .help_string = TRS("Quantizer quality"),
-    },
-    { /* */ }
-  };
-#endif
 
 static const bg_parameter_info_t parameters_libvorbis[] =
   {
@@ -569,6 +561,11 @@ static const bg_parameter_info_t parameters_wma[] = {
   { /* End of parameters */ }
 };
 
+static const bg_parameter_info_t parameters_aac[] = {
+  ENCODE_PARAM_AAC
+  { /* End of parameters */ }
+};
+
 static const ffmpeg_codec_info_t audio_codecs[] =
   {
     {
@@ -641,7 +638,7 @@ static const ffmpeg_codec_info_t audio_codecs[] =
       .name       = "aac",
       .long_name  = TRS("AAC"),
       .id         = AV_CODEC_ID_AAC,
-      //      .parameters = parameters_libfaac,
+      .parameters = parameters_aac,
       //      .flags      = FLAG_EXTRADATA
     },
     {
@@ -1126,18 +1123,16 @@ static const enum_t mb_decision[] =
   };
 
 
-static const enum_t faac_profile[] =
+static const enum_t aac_profile[] =
   {
-#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(62, 0, 0)
-    { "main", FF_PROFILE_AAC_MAIN },
-    { "lc",   FF_PROFILE_AAC_LOW  },
-    { "ssr",  FF_PROFILE_AAC_SSR  },
-    { "ltp",  FF_PROFILE_AAC_LTP  }
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(60, 0, 0)
+    { "main",      FF_PROFILE_AAC_MAIN },
+    { "mpeg2_low", FF_PROFILE_MPEG2_AAC_LOW  },
+    { "low",       FF_PROFILE_AAC_LOW  },
 #else
-    { "main", AV_PROFILE_AAC_MAIN },
-    { "lc",   AV_PROFILE_AAC_LOW  },
-    { "ssr",  AV_PROFILE_AAC_SSR  },
-    { "ltp",  AV_PROFILE_AAC_LTP  }
+    { "main",      AV_PROFILE_AAC_MAIN },
+    { "mpeg2_low", AV_PROFILE_MPEG2_AAC_LOW  },
+    { "low",       AV_PROFILE_AAC_LOW  },
 #endif
   };
 
@@ -1268,7 +1263,7 @@ bg_ffmpeg_set_codec_parameter(AVCodecContext * ctx,
   PARAM_DICT_FLOAT("libx264_crf", "crf");
   PARAM_DICT_FLOAT("libx264_qp", "qp");
 
-  PARAM_ENUM("faac_profile", profile, faac_profile);
+  PARAM_ENUM("aac_profile", profile, aac_profile);
 
   if(!strcmp(name, "faac_quality"))
     ctx->global_quality = FF_QP2LAMBDA * val->v.i;

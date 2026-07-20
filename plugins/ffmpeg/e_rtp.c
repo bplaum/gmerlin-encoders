@@ -22,8 +22,11 @@
 #include <gmerlin/translation.h>
 
 #include <gavl/utils.h>
+#include <gavl/metatags.h>
 #include <gavl/log.h>
 #define LOG_DOMAIN "e_rtp"
+
+#include <gavl/state.h>
 
 
 static const ffmpeg_format_info_t format =
@@ -35,6 +38,7 @@ static const ffmpeg_format_info_t format =
       .max_audio_streams = -1,
       .max_video_streams = -1,
       .audio_codecs = (enum AVCodecID[]){  AV_CODEC_ID_AAC,
+                                           AV_CODEC_ID_PCM_S16BE,
                                            AV_CODEC_ID_NONE },
       .video_codecs = (enum AVCodecID[]){  AV_CODEC_ID_H264,
                                            AV_CODEC_ID_NONE },
@@ -54,6 +58,10 @@ static int ffmpeg_open_rtp(void * data, const char * filename,
   gavl_url_split(filename, NULL, NULL, NULL, &host, &priv->rtp_port, NULL);
 
   priv->rtp_base_address = gavl_sprintf("rtp://%s", host);
+
+  if(host)
+    free(host);
+
   return 1;
   }
 
@@ -74,7 +82,7 @@ static int start_stream(bg_ffmpeg_stream_t * st)
     }
 
   st->ffmpeg->rtp_port += 2;
-  
+  return 1;
   }
 
 static int start_rtp(void * data)
@@ -90,14 +98,17 @@ static int start_rtp(void * data)
 
   for(i = 0; i < priv->num_audio_streams; i++)
     {
-    start_stream(&priv->audio_streams[i]);
+    if(!start_stream(&priv->audio_streams[i]))
+      return 0;
     }
   for(i = 0; i < priv->num_video_streams; i++)
     {
-    start_stream(&priv->video_streams[i]);
+    if(!start_stream(&priv->video_streams[i]))
+      return 0;
     }
-  /* Other types not supported yet (maybe in the future?) */
 
+  /* Other stream types not supported yet (maybe in the future?) */
+  
   /* Create SDP */
   fmtctx = calloc(priv->num_audio_streams + priv->num_audio_streams,
                   sizeof(*fmtctx));
@@ -111,12 +122,76 @@ static int start_rtp(void * data)
 
   av_sdp_create(fmtctx, priv->num_audio_streams + priv->num_video_streams, buf, sizeof(buf));
   fprintf(stderr, "Got SDP:\n%s\n", buf);
+
+  free(fmtctx);
+  
+  return 1;
   }
 
 static void * create_ffmpeg()
   {
   return bg_ffmpeg_create(&format);
   }
+
+static int handle_msg(void * data, gavl_msg_t * msg)
+  {
+  //  ffmpeg_priv_t * priv = data;
+
+  switch(msg->NS)
+    {
+    case GAVL_MSG_NS_STATE:
+      switch(msg->ID)
+        {
+        case GAVL_MSG_STATE_CHANGED:
+          {
+          const char * ctx;
+          const char * var;
+          gavl_value_t val;
+
+          gavl_value_init(&val);
+          
+          gavl_msg_get_state(msg,
+                             NULL,
+                             &ctx,
+                             &var, &val, NULL);
+          
+          if(!strcmp(ctx, GAVL_STATE_CTX_SRC))
+            {
+            
+            if(!strcmp(var, GAVL_STATE_SRC_METADATA))
+              {
+              const gavl_dictionary_t * dict;
+              if((dict = gavl_value_get_dictionary(&val)))
+                {
+                fprintf(stderr, "Got metadata\n");
+                gavl_dictionary_dump(dict, 2);
+                }
+              }
+            
+            }
+          
+          
+          gavl_value_free(&val);
+          }
+          break;
+        }
+      break;
+    }
+    
+  return 1;
+  }
+
+static bg_msg_sink_t * add_msg_stream(void * data, int stream_id)
+  {
+  ffmpeg_priv_t * priv = data;
+  if(stream_id != GAVL_META_STREAM_ID_MSG_PROGRAM)
+    return NULL;
+  
+  priv->msg_sink = bg_msg_sink_create(handle_msg, priv, 1);
+  return priv->msg_sink;
+  
+  }
+
 
 const bg_encoder_plugin_t the_plugin =
   {
@@ -127,7 +202,7 @@ const bg_encoder_plugin_t the_plugin =
       .long_name =      format.label,
       .description =    TRS("Based on ffmpeg (http://www.ffmpeg.org)."),
       .type =           BG_PLUGIN_ENCODER,
-      .flags =          BG_PLUGIN_URL,
+      .flags =          BG_PLUGIN_URL | BG_PLUGIN_NOMUX | BG_PLUGIN_BROADCAST,
       .priority =       5,
       .create =         create_ffmpeg,
       .destroy =        bg_ffmpeg_destroy,
@@ -153,6 +228,7 @@ const bg_encoder_plugin_t the_plugin =
     .add_audio_stream =     bg_ffmpeg_add_audio_stream,
     .add_video_stream =     bg_ffmpeg_add_video_stream,
     .add_text_stream =     bg_ffmpeg_add_text_stream,
+    .add_msg_stream =     add_msg_stream,
 
     .add_audio_stream_compressed =     bg_ffmpeg_add_audio_stream_compressed,
     .add_video_stream_compressed =     bg_ffmpeg_add_video_stream_compressed,
@@ -166,7 +242,7 @@ const bg_encoder_plugin_t the_plugin =
     .get_video_sink =     bg_ffmpeg_get_video_sink,
     .get_video_packet_sink =     bg_ffmpeg_get_video_packet_sink,
     
-    .start =                bg_ffmpeg_start,
+    .start =                start_rtp,
     
     .get_text_sink = bg_ffmpeg_get_text_packet_sink,
 

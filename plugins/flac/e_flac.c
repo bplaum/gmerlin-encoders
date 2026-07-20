@@ -713,7 +713,6 @@ const bg_encoder_plugin_t the_plugin =
     .set_callbacks =       set_callbacks_flac,
     
     .open =                open_flac,
-    .open_io =                open_io_flac,
     
     .get_audio_parameters =    get_audio_parameters_flac,
 

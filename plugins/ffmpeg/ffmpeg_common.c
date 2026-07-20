@@ -255,7 +255,6 @@ static char*ffmpeg_string(char*instr)
   }
 
 static int ffmpeg_open(void * data, const char * filename,
-                       gavl_io_t * io,
                        const gavl_dictionary_t * metadata)
   {
   const gavl_dictionary_t * cl;
@@ -299,18 +298,6 @@ static int ffmpeg_open(void * data, const char * filename,
       free(tmp_string);
       }
     }
-  else if(io)
-    {
-    if(!(priv->format->flags & FLAG_PIPE) &&
-       !gavl_io_can_seek(io))
-      {
-      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "%s cannot be written to a pipe",
-             priv->format->name);
-      return 0;
-      }
-    priv->io = io;
-    priv->fmtctx->flags |= AVFMT_FLAG_CUSTOM_IO;
-    }
   else
     return 0;
   
@@ -333,16 +320,11 @@ static int ffmpeg_open(void * data, const char * filename,
 int bg_ffmpeg_open(void * data, const char * filename,
                    const gavl_dictionary_t * metadata)
   {
-  return ffmpeg_open(data, filename, NULL, metadata);
+  return ffmpeg_open(data, filename, metadata);
   }
 
-int bg_ffmpeg_open_io(void * data, gavl_io_t * io,
-                      const gavl_dictionary_t * metadata)
-  {
-  return ffmpeg_open(data, NULL, io, metadata);
-  }
 
-static void init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
+static int init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
   {
   com->pkt = av_packet_alloc();
 
@@ -350,12 +332,51 @@ static void init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
     com->stream = avformat_new_stream(priv->fmtctx, NULL);
   else
     {
-    com->fmtctx = avformat_alloc_context();
+    const AVOutputFormat *ofmt;
+    char * uri;
+    int result;
+    
+    if(!(ofmt = av_guess_format(priv->format->name, NULL, NULL)))
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Format %s not available",
+               priv->format->name);
+      return 0;
+      }
+    
+    if(priv->rtp_base_address)
+      {
+      uri = gavl_sprintf("%s:%d", priv->rtp_base_address, priv->rtp_port);
+      priv->rtp_port += 2;
+      }
+    else
+      {
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "BUUG: Don't know how to make stream uri");
+      return 0;
+      }
+    
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Opening stream uri: %s", uri);
+      
+    result = avformat_alloc_output_context2(&com->fmtctx, ofmt, NULL, uri);
+
+    if(result < 0 || !com->fmtctx)
+      {
+      gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Could not allocate output context for %s: %s",
+               uri, av_err2str(result));
+      free(uri);
+      return 0;
+      }
+    
+    //    com->fmtctx = avformat_alloc_context();
+
+
+    com->stream = avformat_new_stream(com->fmtctx, NULL);
+    free(uri);
     
     }
   
   com->m = gavl_stream_get_metadata_nc(&com->s);
   com->ffmpeg = priv;
+  return 1;
   }
 
 
