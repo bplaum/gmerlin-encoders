@@ -236,12 +236,15 @@ static bg_msg_sink_t * add_msg_stream(void * data, int stream_id)
   
   }
 
-static void destroy_rtp(void * data)
+static int close_rtp(void * data, int do_delete)
   {
   ffmpeg_priv_t * priv = data;
   if(priv->sap)
+    {
     sap_sender_destroy(priv->sap);
-  bg_ffmpeg_destroy(data);
+    priv->sap = NULL;
+    }
+  return bg_ffmpeg_close(data, do_delete);
   }
 
 const bg_encoder_plugin_t the_plugin =
@@ -256,7 +259,7 @@ const bg_encoder_plugin_t the_plugin =
       .flags =          BG_PLUGIN_URL | BG_PLUGIN_NOMUX | BG_PLUGIN_BROADCAST,
       .priority =       5,
       .create =         create_ffmpeg,
-      .destroy =        destroy_rtp,
+      .destroy =        bg_ffmpeg_destroy,
       .get_parameters = bg_ffmpeg_get_parameters,
       .set_parameter =  bg_ffmpeg_set_parameter,
       .get_protocols = ffmpeg_get_protocols_rtp,
@@ -298,7 +301,7 @@ const bg_encoder_plugin_t the_plugin =
     .get_text_sink = bg_ffmpeg_get_text_packet_sink,
 
     
-    .close =                bg_ffmpeg_close,
+    .close =                close_rtp,
   };
 
 /* Include this into all plugin modules exactly once

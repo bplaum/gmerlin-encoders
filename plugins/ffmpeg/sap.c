@@ -25,7 +25,8 @@
 #include <gavl/gavlsocket.h>
 #include <gavl/utils.h>
 #include <gavl/sap.h>
-
+#include <gavl/log.h>
+#define LOG_DOMAIN "sap-sender"
 #define SAP_INTERVAL (GAVL_TIME_SCALE*5)
 
 
@@ -56,24 +57,23 @@ sap_sender_t * sap_sender_create(const char * sdp_init, const gavl_dictionary_t 
   ret->fd = gavl_udp_socket_create(local_addr);
 
   gavl_sap_init(&ret->sap, local_addr);
-
-#if 0
-  fprintf(stderr, "Initialized SAP:\n");
-  gavl_dictionary_dump(&ret->sap, 2);
-  fprintf(stderr, "Initialized SDP:\n");
-  gavl_dictionary_dump(&ret->sdp, 2);
-#endif
   
   gavl_socket_address_destroy(local_addr);
 
   ret->addr = gavl_socket_address_create();
   gavl_socket_address_set(ret->addr, "239.255.255.255", 9875, SOCK_DGRAM);
-  
   return ret;
   }
 
 void sap_sender_destroy(sap_sender_t * s)
   {
+  /* Send bye */
+
+  gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Sending SAP bye");
+  gavl_sap_encode(&s->sap_buf, 1, &s->sap);
+  gavl_udp_socket_send(s->fd, s->sap_buf.buf, s->sap_buf.len,
+                       s->addr);
+  
   pthread_mutex_destroy(&s->mutex);
   gavl_dictionary_free(&s->sdp);
   gavl_dictionary_free(&s->sap);
@@ -101,7 +101,7 @@ void sap_sender_ping(sap_sender_t * s)
     s->last_sap_time = cur;
     /* TODO: Send SAP */
 
-    fprintf(stderr, "Sending SDP: %s", gavl_dictionary_get_string(&s->sap, GAVL_SAP_SDP));
+    // fprintf(stderr, "Sending SDP: %s\n", gavl_dictionary_get_string(&s->sap, GAVL_SAP_SDP));
     
     //    uri = gavl_sdp_to_uri(s->sdp_string);
     //    fprintf(stderr, "URI: %s\n", uri);
@@ -111,7 +111,8 @@ void sap_sender_ping(sap_sender_t * s)
 
     if(!gavl_udp_socket_send(s->fd, s->sap_buf.buf, s->sap_buf.len,
                             s->addr))
-      fprintf(stderr, "Sending SAP failed\n");
+      gavl_log(GAVL_LOG_ERROR, LOG_DOMAIN, "Sending SAP failed");
+    
     }
   
   pthread_mutex_unlock(&s->mutex);

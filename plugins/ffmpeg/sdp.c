@@ -154,8 +154,8 @@ void bg_sdp_init(gavl_dictionary_t * dict, const char *sdp, gavl_socket_address_
   gavl_dictionary_set_string_nocopy(dict, SDP_HEAD, tmp_string);
   
       
-  fprintf(stderr, "Initialized SDP\n");
-  gavl_dictionary_dump(dict, 2);
+  //  fprintf(stderr, "Initialized SDP\n");
+  //  gavl_dictionary_dump(dict, 2);
   
   fail:
   
@@ -231,8 +231,7 @@ char * bg_sdp_update(gavl_dictionary_t * dict,
   ret = add_meta_string(ret, m, GAVL_META_ALBUM, "album", 0);
   ret = add_meta_string(ret, m, GAVL_META_YEAR, "date", 0);
   ret = add_meta_string(ret, m, GAVL_META_GENRE, "genre", 1);
-  
-  
+  ret = add_meta_string(ret, m, GAVL_META_LOGO_URL, "artwork", 0);
   
   ret = gavl_strcat(ret, gavl_dictionary_get_string(dict, SDP_TAIL));
 
