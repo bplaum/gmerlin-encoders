@@ -18,9 +18,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  * *****************************************************************/
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
-
+ 
 #include <config.h>
 
 #include "ffmpeg_common.h"
@@ -93,6 +94,7 @@ void * bg_ffmpeg_create(const ffmpeg_format_info_t * format)
     bg_ffmpeg_create_audio_parameters(format);
   ret->video_parameters =
     bg_ffmpeg_create_video_parameters(format);
+
   
   return ret;
   }
@@ -126,7 +128,9 @@ void bg_ffmpeg_destroy(void * data)
 
   if(priv->rtp_base_address)
     free(priv->rtp_base_address);
-      
+  
+  gavl_dictionary_free(&priv->m);
+  
   free(priv);
 
   }
@@ -333,7 +337,6 @@ static int init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
   else
     {
     const AVOutputFormat *ofmt;
-    char * uri;
     int result;
     
     if(!(ofmt = av_guess_format(priv->format->name, NULL, NULL)))
@@ -345,7 +348,7 @@ static int init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
     
     if(priv->rtp_base_address)
       {
-      uri = gavl_sprintf("%s:%d", priv->rtp_base_address, priv->rtp_port);
+      com->uri = gavl_sprintf("%s:%d", priv->rtp_base_address, priv->rtp_port);
       priv->rtp_port += 2;
       }
     else
@@ -354,23 +357,20 @@ static int init_stream(ffmpeg_priv_t * priv, bg_ffmpeg_stream_t * com)
       return 0;
       }
     
-    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Opening stream uri: %s", uri);
+    gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Opening stream uri: %s", com->uri);
       
-    result = avformat_alloc_output_context2(&com->fmtctx, ofmt, NULL, uri);
+    result = avformat_alloc_output_context2(&com->fmtctx, ofmt, NULL, com->uri);
 
     if(result < 0 || !com->fmtctx)
       {
       gavl_log(GAVL_LOG_INFO, LOG_DOMAIN, "Could not allocate output context for %s: %s",
-               uri, av_err2str(result));
-      free(uri);
+               com->uri, av_err2str(result));
       return 0;
       }
     
     //    com->fmtctx = avformat_alloc_context();
-
-
+    
     com->stream = avformat_new_stream(com->fmtctx, NULL);
-    free(uri);
     
     }
   
@@ -647,6 +647,14 @@ write_video_packet_func(void * priv, gavl_packet_t * packet)
     st->pkt->flags &= ~AV_PKT_FLAG_KEY;
   
   st->pkt->stream_index= st->stream->index;
+
+  if(st->ping_func)
+    st->ping_func(st->ffmpeg);
+  
+    
+  
+  if(st->pt)
+    gavl_packet_timer_wait(st->pt, packet);
   
   /* write the compressed frame in the media file */
   if(!write_frame(st))
@@ -701,6 +709,14 @@ write_audio_packet_func(void * data, gavl_packet_t * packet)
   
   st->pkt->flags |= AV_PKT_FLAG_KEY;
   st->pkt->stream_index= st->stream->index;
+
+  if(st->ping_func)
+    st->ping_func(st->ffmpeg);
+  
+
+  
+  if(st->pt)
+    gavl_packet_timer_wait(st->pt, packet);
   
   /* write the compressed frame in the media file */
   if(!write_frame(st))
@@ -922,7 +938,10 @@ static void cleanup_stream(bg_ffmpeg_stream_t * com)
   if(com->psink)
     gavl_packet_sink_destroy(com->psink);
 
-
+  if(com->pt)
+    gavl_packet_timer_destroy(com->pt);
+  if(com->uri)
+    free(com->uri);
   
   }
 

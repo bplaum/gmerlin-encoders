@@ -27,6 +27,10 @@
 #include <gmerlin/plugin.h>
 #include <gmerlin/pluginfuncs.h>
 
+#include <gavl/packettimer.h>
+#include <gavl/gavlsocket.h>
+
+
 #if LIBAVCODEC_VERSION_MAJOR >= 61
 #include <libavcodec/codec.h>
 #endif
@@ -49,9 +53,14 @@
 #define FLAG_INITIALIZED        (1<<6) // Contexts are initialized (need av_write_trailer)
 #define FLAG_FLUSHED            (1<<7)
 #define FLAG_ERROR              (1<<8)
+#define FLAG_SAP                (1<<9)
+
 
 #define COUNT_VIDEO_FRAMES
 #define COUNT_FRAMES
+
+typedef struct sap_sender_s sap_sender_t;
+
 
 typedef struct
   {
@@ -246,6 +255,7 @@ typedef struct
   AVStream * stream;
   AVPacket * pkt;
   AVFormatContext * fmtctx;
+  char * uri; // Per stream URI for RTP
   
   bg_ffmpeg_codec_context_t * codec;
   
@@ -270,6 +280,9 @@ typedef struct
   int64_t dts; /* For video streams */
   AVRational time_base;  /* For text streams */
 
+  gavl_packet_timer_t * pt;
+
+  void (*ping_func)(ffmpeg_priv_t * priv);
   
   } bg_ffmpeg_stream_t;
 
@@ -305,6 +318,22 @@ struct ffmpeg_priv_s
   char * rtp_base_address;
   int rtp_port;
   bg_msg_sink_t * msg_sink;
+
+  sap_sender_t * sap;
+
+  gavl_dictionary_t m;
+
+#if 0  
+  pthread_mutex_t sdp_mutex;
+  char * sdp_string;
+  gavl_dictionary_t sdp;
+
+  gavl_dictionary_t sap;
+  gavl_buffer_t sap_buf;
+  //  gavl_socket_addr_t * addr;
+  int sap_fd;
+  gavl_time_t last_sap_time;
+#endif
   };
 
 extern const bg_encoder_framerate_t
@@ -416,3 +445,18 @@ int bg_ffmpeg_add_video_stream_compressed(void * priv,
                                           const gavl_dictionary_t * metadata,
                                           const gavl_video_format_t * format,
                                           const gavl_compression_info_t * info);
+
+/* sap.c */
+
+typedef struct sap_sender_s sap_sender_t;
+
+sap_sender_t * sap_sender_create(const char * initial_sdp, const gavl_dictionary_t * m);
+void sap_sender_destroy(sap_sender_t*);
+
+void sap_sender_ping(sap_sender_t*);
+void sap_sender_update(sap_sender_t*, const gavl_dictionary_t * m);
+
+/* sdp.c */
+
+void bg_sdp_init(gavl_dictionary_t * dict, const char *sdp, gavl_socket_address_t * local);
+char * bg_sdp_update(gavl_dictionary_t * dict, const gavl_dictionary_t * m);

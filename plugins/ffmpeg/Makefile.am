@@ -46,7 +46,7 @@ LIBS = @AVFORMAT_LIBS@
 e_mpeg1video_la_SOURCES = e_mpeg1video.c $(common_sources)
 e_mpeg2video_la_SOURCES = e_mpeg2video.c $(common_sources)
 
-e_rtp_la_SOURCES = e_rtp.c $(common_sources)
+e_rtp_la_SOURCES = e_rtp.c sap.c sdp.c $(common_sources)
 
 e_au_la_SOURCES = e_au.c $(common_sources)
 

@@ -334,7 +334,7 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     ctx->gp.pts      = ctx->pkt->pts;
     ctx->gp.duration = ctx->pkt->duration;
     
-    // fprintf(stderr, "Samples written: %ld\n", ctx->samples_written);
+    //    fprintf(stderr, "Samples written: %ld\n", ctx->samples_written);
     
     /* Last frame can be smaller */
     
@@ -348,8 +348,8 @@ static int flush_audio(bg_ffmpeg_codec_context_t * ctx)
     ctx->gp.buf.len = ctx->pkt->size;
     ctx->gp.buf.buf = ctx->pkt->data;
     
-    // fprintf(stderr, "Put audio packet\n");
-    // gavl_packet_dump(&ctx->gp);
+    //    fprintf(stderr, "Put audio packet\n");
+    //    gavl_packet_dump(&ctx->gp);
     
     if(gavl_packet_sink_put_packet(ctx->psink, &ctx->gp) != GAVL_SINK_OK)
       ctx->flags |= FLAG_ERROR;
@@ -524,6 +524,9 @@ gavl_audio_sink_t * bg_ffmpeg_codec_open_audio(bg_ffmpeg_codec_context_t * ctx,
   fmt->sample_format =
     bg_sample_format_ffmpeg_2_gavl(ctx->avctx->sample_fmt, &fmt->interleave_mode);
 
+  fprintf(stderr, "Got sampleformat: %s\n", gavl_sample_format_to_string(fmt->sample_format));
+  
+  
   /* Set codec specific stuff */
   switch(ctx->avctx->codec_id)
     {
