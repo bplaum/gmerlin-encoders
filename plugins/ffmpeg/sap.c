@@ -127,6 +127,10 @@ void sap_sender_update(sap_sender_t * s, const gavl_dictionary_t * m)
   sdp = bg_sdp_update(&s->sdp, m);
   gavl_dictionary_set_string_nocopy(&s->sap, GAVL_SAP_SDP, sdp);
   gavl_sap_encode(&s->sap_buf, 0, &s->sap);
+
+  //  fprintf(stderr, "Updated SAP packet:\n");
+  //  gavl_hexdump(s->sap_buf.buf, s->sap_buf.len, 16);
+  
   s->last_sap_time = GAVL_TIME_UNDEFINED;
   pthread_mutex_unlock(&s->mutex);
   }
