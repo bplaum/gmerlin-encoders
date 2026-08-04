@@ -267,7 +267,6 @@ const bg_encoder_plugin_t the_plugin =
     
     .max_audio_streams =         -1,
     .max_video_streams =         -1,
-    .max_text_streams = -1,
     
     .get_audio_parameters = bg_ffmpeg_get_audio_parameters,
     .get_video_parameters = bg_ffmpeg_get_video_parameters,
